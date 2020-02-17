@@ -1,0 +1,19 @@
+galaxy_info:
+  description: knot resolver role
+  issue_tracker_url: https://github.com/escapace/ansible-kresd/issues
+  license: Apache-2.0
+  author: Escapace
+  min_ansible_version: 2.4
+  github_branch: master
+  platforms:
+  - name: EL
+    versions:
+    - 8
+
+  galaxy_tags:
+  - escapace
+  - kresd
+
+dependencies:
+   - { role: escapace.epel }
+   - { role: escapace.packagecloud }

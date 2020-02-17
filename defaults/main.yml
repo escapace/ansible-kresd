@@ -1,0 +1,25 @@
+---
+
+kresd_role_debug: false
+kresd_ipv6: true
+kresd_dnssec: true
+kresd_cache_size: 128
+kresd_threads: 2
+kresd_max_threads: 8
+
+kresd_tls_forward:
+  - { address: '8.8.8.8', hostname: 'dns.google' }
+  - { address: '8.8.4.4', hostname: 'dns.google' }
+  - { address: '1.1.1.1', hostname: 'cloudflare-dns.com' }
+  - { address: '1.0.0.1', hostname: 'cloudflare-dns.com' }
+  - { address: '2606:4700:4700::1111', hostname: 'cloudflare-dns.com' }
+  - { address: '2606:4700:4700::1001', hostname: 'cloudflare-dns.com' }
+  - { address: '2001:4860:4860::8888', hostname: 'dns.google' }
+  - { address: '2001:4860:4860::8844', hostname: 'dns.google' }
+
+kresd_kernel_params:
+  - { name: net.core.rmem_max, value: 26214400 }
+  - { name: net.core.rmem_default, value: 26214400 }
+  - { name: net.core.wmem_max, value: 26214400 }
+  - { name: net.core.somaxconn, value: 256 }
+  - { name: net.ipv4.tcp_max_syn_backlog, value: 256 }
