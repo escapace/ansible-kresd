@@ -1,0 +1,10 @@
+---
+
+- name: kresd reload NetworkManager
+  service:
+    name: NetworkManager
+    state: reloaded
+
+- name: kresd restart
+  service: name=kresd@{{ item }} state={{ (item|int < kresd_threads|int) | ternary('restarted', 'stopped') }}
+  with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}

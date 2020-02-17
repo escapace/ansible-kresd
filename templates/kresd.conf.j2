@@ -1,0 +1,19 @@
+{% raw %}
+-- Load configuration from kresd.conf.d/ directory
+
+local lfs = require('lfs')
+local conf_dir = '/etc/knot-resolver/kresd.conf.d'
+
+if lfs.attributes(conf_dir) ~= nil then
+	local conf_files = {}
+	for entry in lfs.dir(conf_dir) do
+		if entry:sub(-5) == '.conf' then
+			table.insert(conf_files, entry)
+		end
+	end
+	table.sort(conf_files)
+	for i = 1, #conf_files do
+		dofile(conf_dir .. '/' .. conf_files[i])
+	end
+end
+{% endraw %}
