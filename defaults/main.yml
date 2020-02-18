@@ -4,7 +4,7 @@ kresd_role_debug: false
 kresd_ipv6: true
 kresd_dnssec: true
 kresd_cache_size: 128
-kresd_threads: 2
+kresd_threads: 1
 kresd_max_threads: 8
 
 kresd_tls_forward:
