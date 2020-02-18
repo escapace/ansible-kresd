@@ -1,8 +1,5 @@
 ---
 
-# TODO:
-# tmpfs        /var/cache/knot-resolver        tmpfs   rw,size=2G,uid=knot-resolver,gid=knot-resolver,nosuid,nodev,noexec,mode=0700 0 0
-#
 - name: install knot resolver
   package:
     name: ['knot-resolver', 'lua5.1-filesystem']
@@ -77,8 +74,7 @@
     group: knot-resolver
     mode: '0770'
     state: directory
-  notify:
-    - kresd restart
+  changed_when: False
 
 - name: ensure cache is mounted
   mount:
@@ -89,8 +85,6 @@
     state: mounted
   register: kresd_cache_mount_result
   ignore_errors: True
-  notify:
-    - kresd restart
 
 - name: failed to mount cache
   fail: msg="failed to mount cache"
