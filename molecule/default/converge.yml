@@ -1,0 +1,7 @@
+---
+- name: Converge
+  hosts: all
+  vars:
+    kresd_role_debug: true
+  roles:
+  - role: escapace.kresd
