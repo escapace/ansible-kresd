@@ -133,6 +133,16 @@
   service: name=kresd@{{ item }} state={{ (item|int < kresd_threads|int) | ternary('started', 'stopped') }}
   with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
 
+- name: garbage collector daemon
+  template:
+    src: templates/kres-cache-gc.service.j2
+    dest: /usr/lib/systemd/system/kres-cache-gc.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - kresd garbage collector reload
+
 - name: update resolv.conf
   template:
     src: templates/resolv.conf.j2
