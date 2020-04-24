@@ -1,0 +1,27 @@
+[Unit]
+Description=Knot Resolver daemon
+Documentation=man:kresd.systemd(7)
+Documentation=man:kresd(8)
+Wants=kres-cache-gc.service
+Before=kres-cache-gc.service
+Wants=network-online.target
+After=network-online.target
+Wants=dummy0.service
+After=dummy0.service
+
+[Service]
+Type=notify
+Environment="SYSTEMD_INSTANCE=%i"
+WorkingDirectory=/var/lib/knot-resolver
+ExecStart=/usr/sbin/kresd -c /usr/lib64/knot-resolver/distro-preconfig.lua -c /etc/knot-resolver/kresd.conf -n
+User=knot-resolver
+Group=knot-resolver
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_SETPCAP
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_SETPCAP
+TimeoutStopSec=10s
+WatchdogSec=10s
+Restart=on-abnormal
+LimitNOFILE=524288
+
+[Install]
+WantedBy=kresd.target

@@ -9,8 +9,7 @@
   service: name=kresd@{{ item }} state={{ (item|int < kresd_threads|int) | ternary('restarted', 'stopped') }}
   with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
 
-- name: kresd garbage collector reload
+- name: kresd daemon-reload
   systemd:
-    state: restarted
     daemon_reload: yes
-    name: kres-cache-gc
+
