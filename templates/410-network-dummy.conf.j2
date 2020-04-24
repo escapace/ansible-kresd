@@ -1,4 +1,4 @@
-net.listen('{{ dummy_ipv4_cidr | ipaddr('network') | ipmath(1) }}', 53, { kind = 'dns', freebind = true })
-net.listen('{{ dummy_ipv4_cidr | ipaddr('network') | ipmath(1) }}', 853, { kind = 'tls', freebind = true })
-net.listen('{{ dummy_ipv6_cidr | ipaddr('network') | ipmath(1) }}', 53, { kind = 'dns', freebind = true })
-net.listen('{{ dummy_ipv6_cidr | ipaddr('network') | ipmath(1) }}', 853, { kind = 'tls', freebind = true })
+net.listen('{{ dummy_ipv4_cidr | ipaddr('network') | ipmath(1) }}', 53, { kind = 'dns', freebind = false })
+net.listen('{{ dummy_ipv4_cidr | ipaddr('network') | ipmath(1) }}', 853, { kind = 'tls', freebind = false })
+net.listen('{{ dummy_ipv6_cidr | ipaddr('network') | ipmath(1) }}', 53, { kind = 'dns', freebind = false })
+net.listen('{{ dummy_ipv6_cidr | ipaddr('network') | ipmath(1) }}', 853, { kind = 'tls', freebind = false })

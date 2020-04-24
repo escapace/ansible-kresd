@@ -126,14 +126,6 @@
   notify:
     - kresd restart
 
-- name: ensure that kresd is enabled
-  service: name=kresd@{{ item }} enabled={{ item|int < kresd_threads|int }}
-  with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
-
-- name: ensure that kresd is running
-  service: name=kresd@{{ item }} state={{ (item|int < kresd_threads|int) | ternary('started', 'stopped') }}
-  with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
-
 - name: garbage collector daemon
   template:
     src: templates/kres-cache-gc.service.j2
@@ -142,7 +134,31 @@
     group: root
     mode: 0644
   notify:
-    - kresd garbage collector reload
+    - kresd daemon-reload
+
+- name: kresd daemon
+  template:
+    src: templates/kresd@.j2
+    dest: /usr/lib/systemd/system/kresd@.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - kresd daemon-reload
+
+- name: ensure that kresd is enabled
+  service: name=kresd@{{ item }} enabled={{ item|int < kresd_threads|int }}
+  with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
+
+- name: ensure that kresd is running
+  service: name=kresd@{{ item }} state={{ (item|int < kresd_threads|int) | ternary('started', 'stopped') }}
+  with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
+
+- name: ensure that kres-cache-gc is enabled
+  service: name=kres-cache-gc enabled=true
+
+- name: ensure that kresd is running
+  service: name=kres-cache-gc state=started
 
 - name: update resolv.conf
   template:
