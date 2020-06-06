@@ -149,15 +149,17 @@
 - name: ensure that kresd is enabled
   service: name=kresd@{{ item }} enabled={{ item|int < kresd_threads|int }}
   with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
+  when: not kresd_role_debug|bool
 
 - name: ensure that kresd is running
   service: name=kresd@{{ item }} state={{ (item|int < kresd_threads|int) | ternary('started', 'stopped') }}
   with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
+  when: not kresd_role_debug|bool
 
 - name: ensure that kres-cache-gc is enabled
   service: name=kres-cache-gc enabled=true
 
-- name: ensure that kresd is running
+- name: ensure that kres-cache-gc is running
   service: name=kres-cache-gc state=started
 
 - name: update resolv.conf
