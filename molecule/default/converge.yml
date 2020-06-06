@@ -3,5 +3,7 @@
   hosts: all
   vars:
     kresd_role_debug: true
+    ferm_role_debug: true
+    dummy_role_debug: true
   roles:
   - role: escapace.kresd
