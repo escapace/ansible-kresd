@@ -1,8 +1,14 @@
 ---
 
+- name: install lua-filesystem
+  dnf:
+    name: "{{ kresd_rpm_lua_filesystem }}"
+    disable_gpg_check: yes
+    state: present 
+
 - name: install knot resolver
   package:
-    name: ['knot-resolver', 'lua5.1-filesystem']
+    name: ['knot-resolver']
     state: present
 
 - name: set recommended kernel parameters

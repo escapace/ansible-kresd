@@ -6,6 +6,7 @@ kresd_dnssec: true
 kresd_cache_size: 128
 kresd_threads: 1
 kresd_max_threads: 8
+kresd_rpm_lua_filesystem: "https://github.com/escapace/rpmbuild/releases/download/v1.3.0/lua5.1-filesystem-1.6.3-11.el8.x86_64.rpm"
 
 kresd_tls_forward:
   - { address: '8.8.8.8', hostname: 'dns.google' }
