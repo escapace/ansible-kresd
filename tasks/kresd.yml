@@ -4,7 +4,7 @@
   dnf:
     name: "{{ kresd_rpm_lua_filesystem }}"
     disable_gpg_check: yes
-    state: present 
+    state: present
 
 - name: install knot resolver
   package:
@@ -126,11 +126,67 @@
     - "630-module-view.conf.j2"
     - "640-module-predict.conf.j2"
     - "640-module-workarounds.conf.j2"
-    - "800-policy-forward.conf.j2"
+    - "890-policy-forward.conf.j2"
     - "998-view-local.conf.j2"
     - "999-view-drop.conf.j2"
   notify:
     - kresd restart
+
+- name: kresd.conf.d files
+  template:
+    src: "{{ item }}"
+    dest: /etc/knot-resolver/kresd.conf.d/{{ item | basename | regex_replace('.j2$', '') }}
+    owner: root
+    group: knot-resolver
+    mode: 0640
+  loop:
+    - "815-policy-ec2.conf.j2"
+  when: provider is defined and provider == "ec2"
+  notify:
+    - kresd restart
+
+- name: copy knot-resolver ferm conf files
+  copy: src=files/1005-knot-resolver.conf dest=/etc/ferm/ferm.d/1005-knot-resolver.conf owner=root group=root mode=0600
+  when: provider is defined and provider == "ec2"
+  notify:
+    - ferm restart
+
+- name: copy kresd-metadata
+  template:
+    src: files/kresd-metadata-ec2
+    dest: /usr/bin/kresd-metadata
+    owner: root
+    group: root
+    mode: "0755"
+  when: provider is defined and provider == "ec2"
+
+- name: copy kresd-metadata
+  template:
+    src: files/kresd-metadata-generic
+    dest: /usr/bin/kresd-metadata
+    owner: root
+    group: root
+    mode: "0755"
+  when: provider is not defined
+
+- name: touch /etc/knot-resolver/environment
+  file:
+    path: /etc/knot-resolver/environment
+    owner: root
+    group: knot-resolver
+    state: touch
+    mode: "0660"
+
+- name: metadata service
+  template:
+    src: templates/kresd-metadata.service.j2
+    dest: /usr/lib/systemd/system/kresd-metadata.service
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - kresd daemon-reload
+
 
 - name: garbage collector daemon
   template:
@@ -190,3 +246,4 @@
     group: root
     mode: 0644
   when: "'cloud-init' in ansible_facts.packages"
+

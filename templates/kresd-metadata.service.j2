@@ -1,0 +1,11 @@
+[Unit]
+Description=Setup knot-resolver environment
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/kresd-metadata
+User=knot-resolver
+Group=knot-resolver
+RemainAfterExit=yes
+Type=oneshot

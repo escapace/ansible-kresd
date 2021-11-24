@@ -8,10 +8,13 @@ Wants=network-online.target
 After=network-online.target
 Wants=dummy0.service
 After=dummy0.service
+Requires=kresd-metadata.service
+After=kresd-metadata.service
 
 [Service]
 Type=notify
 Environment="SYSTEMD_INSTANCE=%i"
+EnvironmentFile=/etc/knot-resolver/environment
 WorkingDirectory=/var/lib/knot-resolver
 ExecStart=/usr/sbin/kresd -c /usr/lib64/knot-resolver/distro-preconfig.lua -c /etc/knot-resolver/kresd.conf -n
 User=knot-resolver

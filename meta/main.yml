@@ -19,4 +19,5 @@ galaxy_info:
 
 dependencies:
    - { role: escapace.epel }
+   - { role: escapace.ferm }
    - { role: escapace.dummy }
