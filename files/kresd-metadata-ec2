@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ec2_vpc_dns () {
+  local mac
+  local cidr
+  local net
+  local base
+  local dns
+
+  mac="$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/ | head -n 1)"
+  cidr="$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/"${mac}"/vpc-ipv4-cidr-block)"
+  net="${cidr%%/*}"
+  base="$(echo "${net}" | cut -d"." -f1-3)"
+  dns="${base}"'.2'
+
+  echo "${dns}"
+}
+
+kresd_metadata () {
+  local -r environment=$(cat <<EOF
+EC2_VPC_DNS="$(ec2_vpc_dns)"
+EOF
+)
+
+  echo -e "${environment}" > /etc/knot-resolver/environment
+}
+
+kresd_metadata
