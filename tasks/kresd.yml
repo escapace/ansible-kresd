@@ -116,7 +116,6 @@
   loop:
     - "000-cache.conf.j2"
     - "400-network-local.conf.j2"
-    - "410-network-dummy.conf.j2"
     - "500-unprivileged.conf.j2"
     - "600-dnssec.conf.j2"
     - "620-module-bogus-log.conf.j2"
