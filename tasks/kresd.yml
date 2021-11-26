@@ -245,4 +245,3 @@
     group: root
     mode: 0644
   when: "'cloud-init' in ansible_facts.packages"
-
