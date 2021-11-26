@@ -175,6 +175,7 @@
     group: knot-resolver
     state: touch
     mode: "0660"
+  changed_when: false
 
 - name: metadata service
   template:
