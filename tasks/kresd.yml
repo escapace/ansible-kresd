@@ -103,8 +103,6 @@
     owner: root
     group: knot-resolver
     mode: 0640
-  notify:
-    - kresd restart
 
 - name: kresd.conf.d files
   template:
@@ -128,8 +126,6 @@
     - "890-policy-forward.conf.j2"
     - "998-view-local.conf.j2"
     - "999-view-drop.conf.j2"
-  notify:
-    - kresd restart
 
 - name: kresd.conf.d files
   template:
@@ -141,14 +137,10 @@
   loop:
     - "815-policy-ec2.conf.j2"
   when: provider is defined and provider == "ec2"
-  notify:
-    - kresd restart
 
 - name: copy knot-resolver ferm conf files
   copy: src=files/1005-knot-resolver.conf dest=/etc/ferm/ferm.d/1005-knot-resolver.conf owner=root group=root mode=0600
   when: provider is defined and provider == "ec2"
-  notify:
-    - ferm restart
 
 - name: copy kresd-metadata
   template:
@@ -187,7 +179,6 @@
   notify:
     - kresd daemon-reload
 
-
 - name: garbage collector daemon
   template:
     src: templates/kres-cache-gc.service.j2
@@ -212,31 +203,11 @@
   service: name=kresd@{{ item }} enabled={{ item|int < kresd_threads|int }}
   with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
   when: not kresd_role_debug|bool
-
-- name: ensure that kresd is running
-  service: name=kresd@{{ item }} state={{ (item|int < kresd_threads|int) | ternary('started', 'stopped') }}
-  with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
-  when: not kresd_role_debug|bool
+  notify:
+    - kresd update resolv.conf
 
 - name: ensure that kres-cache-gc is enabled
   service: name=kres-cache-gc enabled=true
-
-- name: ensure that kres-cache-gc is running
-  service: name=kres-cache-gc state=started
-
-- name: update resolv.conf
-  template:
-    src: templates/resolv.conf.j2
-    dest: /etc/resolv.conf
-    owner: root
-    group: root
-    mode: 0644
-  register: kresd_resolv_conf_result
-  ignore_errors: True
-
-- name: failed to update resolv.conf
-  fail: msg="failed to update resolv.conf"
-  when: (kresd_resolv_conf_result is failed and (not kresd_role_debug|bool))
 
 - name: configure cloud-init
   template:
