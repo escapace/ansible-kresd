@@ -1,8 +1,6 @@
 internal = policy.todnames({
-  'internal.'
---  'compute.internal.',
---  'ec2.internal',
---  'eu-central-1.compute.internal'
+  'internal.',
+  'amazonaws.com'
 })
 policy.add(policy.suffix(policy.FLAGS({'NO_CACHE'}), internal))
 policy.add(policy.suffix(policy.STUB(env.EC2_VPC_DNS), internal))

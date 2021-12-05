@@ -14,11 +14,6 @@
     mode: 0644
   when: not kresd_role_debug|bool
 
-# - name: kresd restart
-#   service: name=kresd@{{ item }} state={{ (item|int < kresd_threads|int) | ternary('restarted', 'stopped') }}
-#   with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
-#   when: not kresd_role_debug|bool
-
 - name: kresd daemon-reload
   systemd:
     daemon_reload: yes
