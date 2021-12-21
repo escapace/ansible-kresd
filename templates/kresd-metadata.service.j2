@@ -4,8 +4,11 @@ Requires=network-online.target
 After=network-online.target
 
 [Service]
-ExecStart=/usr/bin/kresd-metadata
+ExecStart=/usr/sbin/kresd-metadata
 User=knot-resolver
 Group=knot-resolver
 RemainAfterExit=yes
 Type=oneshot
+
+[Install]
+WantedBy=kresd.target
