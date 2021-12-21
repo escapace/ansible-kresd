@@ -145,7 +145,7 @@
 - name: copy kresd-metadata
   template:
     src: files/kresd-metadata-ec2
-    dest: /usr/bin/kresd-metadata
+    dest: /usr/sbin/kresd-metadata
     owner: root
     group: root
     mode: "0755"
@@ -154,7 +154,7 @@
 - name: copy kresd-metadata
   template:
     src: files/kresd-metadata-generic
-    dest: /usr/bin/kresd-metadata
+    dest: /usr/sbin/kresd-metadata
     owner: root
     group: root
     mode: "0755"
