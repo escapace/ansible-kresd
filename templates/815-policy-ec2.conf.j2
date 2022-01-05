@@ -1,6 +1,8 @@
 internal = policy.todnames({
+  env.EC2_INSTANCE_ETH0_IPV4_VPC_REVERSE_POINTERS,
   'internal.',
-  'amazonaws.com'
+  'amazonaws.com.'
 })
+
 policy.add(policy.suffix(policy.FLAGS({'NO_CACHE'}), internal))
-policy.add(policy.suffix(policy.STUB(env.EC2_VPC_DNS), internal))
+policy.add(policy.suffix(policy.STUB(env.EC2_INSTANCE_ETH0_IPV4_VPC_DNS), internal))

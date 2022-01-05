@@ -1,0 +1,14 @@
+---
+
+- name: kresd.conf.d files
+  template:
+    src: "{{ item }}"
+    dest: /etc/knot-resolver/kresd.conf.d/{{ item | basename | regex_replace('.j2$', '') }}
+    owner: root
+    group: knot-resolver
+    mode: 0640
+  loop:
+    - "815-policy-ec2.conf.j2"
+
+- name: copy knot-resolver ferm conf files
+  copy: src=files/1005-knot-resolver.conf dest=/etc/ferm/ferm.d/1005-knot-resolver.conf owner=root group=root mode=0600
