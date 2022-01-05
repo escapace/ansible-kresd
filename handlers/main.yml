@@ -1,10 +1,5 @@
 ---
 
-- name: kresd reload NetworkManager
-  service:
-    name: NetworkManager
-    state: reloaded
-
 - name: kresd update resolv.conf
   template:
     src: templates/resolv.conf.j2

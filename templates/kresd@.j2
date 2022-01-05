@@ -2,17 +2,19 @@
 Description=Knot Resolver daemon
 Documentation=man:kresd.systemd(7)
 Documentation=man:kresd(8)
-After=kresd-metadata.service
 After=network-online.target
 Before=kres-cache-gc.service
 Wants=kres-cache-gc.service
-Wants=kresd-metadata.service
 Wants=network-online.target
+Before=nss-lookup.target
+Wants=nss-lookup.target
 
 [Service]
 Type=notify
 Environment="SYSTEMD_INSTANCE=%i"
-EnvironmentFile=/etc/knot-resolver/environment
+{% if provider is defined and provider == "ec2" %}
+EnvironmentFile=/etc/sysconfig/ec2-environment
+{% endif %}
 WorkingDirectory=/var/lib/knot-resolver
 ExecStart=/usr/sbin/kresd -c /usr/lib64/knot-resolver/distro-preconfig.lua -c /etc/knot-resolver/kresd.conf -n
 User=knot-resolver

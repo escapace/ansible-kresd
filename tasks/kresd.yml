@@ -11,19 +11,6 @@
     name: ['knot-resolver']
     state: present
 
-- name: set recommended kernel parameters
-  sysctl:
-    name: "{{ item.name }}"
-    value: "{{ item.value }}"
-    state: present
-  with_items: "{{ kresd_kernel_params }}"
-  register: kresd_kernel_params_result
-  ignore_errors: True
-
-- name: failed to set recommended kernel parameters
-  fail: msg="failed to set recommended kernel parameters"
-  when: (kresd_kernel_params_result is failed and (not kresd_role_debug|bool))
-
 - name: /etc/knot-resolver directory
   file:
     path: /etc/knot-resolver
@@ -57,21 +44,21 @@
   package_facts:
     manager: "auto"
 
-- name: make sure line 'dns=none' is set in /etc/NetworkManager/NetworkManager.conf
-  ini_file:
-    path: /etc/NetworkManager/NetworkManager.conf
-    state: present
-    no_extra_spaces: yes
-    section: main
-    option: dns
-    value: none
-    owner: root
-    group: root
-    mode: 0644
-    backup: yes
-  when: "'NetworkManager' in ansible_facts.packages"
-  notify:
-    - kresd reload NetworkManager
+# - name: make sure line 'dns=none' is set in /etc/NetworkManager/NetworkManager.conf
+#   ini_file:
+#     path: /etc/NetworkManager/NetworkManager.conf
+#     state: present
+#     no_extra_spaces: yes
+#     section: main
+#     option: dns
+#     value: none
+#     owner: root
+#     group: root
+#     mode: 0644
+#     backup: yes
+#   when: "'NetworkManager' in ansible_facts.packages"
+#   notify:
+#     - kresd reload NetworkManager
 
 - name: ensure cache directory exists
   file:
@@ -127,58 +114,6 @@
     - "998-view-local.conf.j2"
     - "999-view-drop.conf.j2"
 
-- name: kresd.conf.d files
-  template:
-    src: "{{ item }}"
-    dest: /etc/knot-resolver/kresd.conf.d/{{ item | basename | regex_replace('.j2$', '') }}
-    owner: root
-    group: knot-resolver
-    mode: 0640
-  loop:
-    - "815-policy-ec2.conf.j2"
-  when: provider is defined and provider == "ec2"
-
-- name: copy knot-resolver ferm conf files
-  copy: src=files/1005-knot-resolver.conf dest=/etc/ferm/ferm.d/1005-knot-resolver.conf owner=root group=root mode=0600
-  when: provider is defined and provider == "ec2"
-
-- name: copy kresd-metadata
-  template:
-    src: files/kresd-metadata-ec2
-    dest: /usr/sbin/kresd-metadata
-    owner: root
-    group: root
-    mode: "0755"
-  when: provider is defined and provider == "ec2"
-
-- name: copy kresd-metadata
-  template:
-    src: files/kresd-metadata-generic
-    dest: /usr/sbin/kresd-metadata
-    owner: root
-    group: root
-    mode: "0755"
-  when: provider is not defined
-
-- name: touch /etc/knot-resolver/environment
-  file:
-    path: /etc/knot-resolver/environment
-    owner: root
-    group: knot-resolver
-    state: touch
-    mode: "0660"
-  changed_when: false
-
-- name: metadata service
-  template:
-    src: templates/kresd-metadata.service.j2
-    dest: /usr/lib/systemd/system/kresd-metadata.service
-    owner: root
-    group: root
-    mode: 0644
-  notify:
-    - kresd daemon-reload
-
 - name: garbage collector daemon
   template:
     src: templates/kres-cache-gc.service.j2
@@ -209,6 +144,9 @@
 - name: ensure that kres-cache-gc is enabled
   service: name=kres-cache-gc enabled=true
 
+- name: ensure that systemd-resolved is disabled
+  service: name=systemd-resolved enabled=false
+
 - name: configure cloud-init
   template:
     src: "cloud-init.conf.j2"
@@ -217,3 +155,6 @@
     group: root
     mode: 0644
   when: "'cloud-init' in ansible_facts.packages"
+
+- include_tasks: provider-ec2.yml
+  when: provider is defined and provider == "ec2"
