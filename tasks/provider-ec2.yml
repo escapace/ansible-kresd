@@ -9,6 +9,3 @@
     mode: 0640
   loop:
     - "815-policy-ec2.conf.j2"
-
-- name: copy knot-resolver ferm conf files
-  copy: src=files/1005-knot-resolver.conf dest=/etc/ferm/ferm.d/1005-knot-resolver.conf owner=root group=root mode=0600
