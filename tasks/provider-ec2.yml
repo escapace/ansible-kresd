@@ -1,5 +1,9 @@
 ---
 
+- name: include escapace.aws_environment role
+  include_role:
+    name: escapace.aws_environment
+
 - name: kresd.conf.d files
   template:
     src: "{{ item }}"
