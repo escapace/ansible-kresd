@@ -13,3 +13,5 @@
     mode: 0640
   loop:
     - "815-policy-ec2.conf.j2"
+  tags:
+  - kresd-conf
