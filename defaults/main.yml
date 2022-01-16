@@ -7,6 +7,11 @@ kresd_cache_size: 32
 kresd_threads: 1
 kresd_max_threads: 8
 kresd_rpm_lua_filesystem: "https://github.com/escapace/rpmbuild/releases/download/v1.3.0/lua5.1-filesystem-1.6.3-11.el8.{{ ansible_architecture }}.rpm"
+kresd_log_level: info
+kresd_log_dnssec: false
+kresd_prometheus_endpoint: false
+kresd_prometheus_namespace: resolver_
+kresd_prometheus_endpoint_port: 8453
 
 kresd_tls_forward:
   - { address: '8.8.8.8', hostname: 'dns.google' }
