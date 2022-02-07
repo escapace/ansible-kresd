@@ -1,0 +1,8 @@
+{% if kresd_dnstap | bool %}
+modules.load('dnstap')
+
+dnstap.config({
+  socket_path = "/var/run/knot-resolver/dnstap.socket",
+  log_responses = true
+})
+{% endif %}
