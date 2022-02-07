@@ -1,21 +1,23 @@
 ---
 
-- name: install lua-filesystem
-  dnf:
-    name: "{{ kresd_rpm_lua_filesystem }}"
-    disable_gpg_check: yes
-    state: present
-
 - name: install knot resolver
   package:
-    name: ['knot-resolver']
+    name: ['knot-resolver', 'lua5.1-filesystem']
     state: present
 
-- name: install lua http
+- name: install http module
   package:
-    name: ['lua5.1-http', 'knot-resolver-module-http', 'lua5.1-cqueues']
+    name: ['knot-resolver-module-http']
     state: present
   when: kresd_prometheus_endpoint | bool is true
+  tags:
+  - kresd-conf
+
+- name: install dnstap module
+  package:
+    name: ['knot-resolver-module-dnstap']
+    state: present
+  when: kresd_dnstap | bool is true
   tags:
   - kresd-conf
 
@@ -123,6 +125,7 @@
     - "630-module-view.conf.j2"
     - "640-module-predict.conf.j2"
     - "640-module-workarounds.conf.j2"
+    - "640-module-dnstap.conf.j2"
     - "650-prometheus-endpoint.conf.j2"
     - "890-policy-forward.conf.j2"
     - "998-view-local.conf.j2"
