@@ -5,4 +5,4 @@
     kresd_role_debug: true
     ferm_role_debug: true
   roles:
-  - role: escapace.kresd
+    - role: escapace.kresd

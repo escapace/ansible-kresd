@@ -11,4 +11,5 @@
 
 - name: kresd daemon-reload
   systemd:
-    daemon_reload: yes
+    daemon_reload: true
+  when: not kresd_role_debug|bool

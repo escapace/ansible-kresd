@@ -14,4 +14,4 @@
   loop:
     - "815-policy-ec2.conf.j2"
   tags:
-  - kresd-conf
+    - kresd-conf
