@@ -9,14 +9,15 @@ galaxy_info:
   min_ansible_version: 2.10
   github_branch: trunk
   platforms:
-  - name: EL
-    versions:
-    - 9
+    - name: EL
+      versions:
+        - 9
 
   galaxy_tags:
-  - escapace
-  - kresd
+    - escapace
+    - kresd
 
 dependencies:
-   - { role: escapace.epel }
-   - { role: escapace.ferm }
+  - { role: escapace.fedora_releases }
+  - { role: escapace.epel }
+  - { role: escapace.ferm }

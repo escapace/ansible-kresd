@@ -11,7 +11,7 @@
     state: present
   when: kresd_prometheus_endpoint | bool is true
   tags:
-  - kresd-conf
+    - kresd-conf
 
 - name: install dnstap module
   package:
@@ -19,7 +19,7 @@
     state: present
   when: kresd_dnstap | bool is true
   tags:
-  - kresd-conf
+    - kresd-conf
 
 - name: /etc/knot-resolver directory
   file:
@@ -37,7 +37,7 @@
     mode: '0750'
     state: directory
   tags:
-  - kresd-conf
+    - kresd-conf
 
 - name: fix file permissions
   file:
@@ -79,7 +79,7 @@
     group: knot-resolver
     mode: '0770'
     state: directory
-  changed_when: False
+  changed_when: false
 
 - name: ensure cache is mounted
   mount:
@@ -89,7 +89,7 @@
     opts: "size={{ kresd_cache_size }}m"
     state: mounted
   register: kresd_cache_mount_result
-  ignore_errors: True
+  ignore_errors: true
 
 - name: failed to mount cache
   fail: msg="failed to mount cache"
@@ -103,7 +103,7 @@
     group: knot-resolver
     mode: 0640
   tags:
-  - kresd-conf
+    - kresd-conf
 
 - name: kresd.conf.d files
   template:
@@ -131,7 +131,7 @@
     - "998-view-local.conf.j2"
     - "999-view-drop.conf.j2"
   tags:
-  - kresd-conf
+    - kresd-conf
 
 - name: garbage collector daemon
   template:
@@ -162,9 +162,11 @@
 
 - name: ensure that kres-cache-gc is enabled
   service: name=kres-cache-gc enabled=true
+  when: not kresd_role_debug|bool
 
 - name: ensure that systemd-resolved is disabled
   service: name=systemd-resolved enabled=false
+  when: not kresd_role_debug|bool
 
 - name: configure cloud-init
   template:
@@ -178,4 +180,4 @@
 - include_tasks: provider-ec2.yml
   when: provider is defined and provider == "ec2"
   tags:
-  - kresd-conf
+    - kresd-conf
