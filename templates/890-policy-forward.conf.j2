@@ -4,13 +4,13 @@
 policy.add(policy.all(policy.TLS_FORWARD({
 {% endraw %}
 {% for item in kresd_tls_forward %}
-{% if kresd_ipv6 and kresd_ns.count != 4 and item.address | ipv6 %}
+{% if kresd_ipv6 and kresd_ns.count != 4 and item.address | ansible.utils.ipv6 %}
 {% set kresd_ns.count = kresd_ns.count + 1 %}
 {{ '{ \'' + item.address + '\', hostname=\'' + item.hostname + '\' },' }}
 {% endif %}
 {% endfor %}
 {% for item in kresd_tls_forward %}
-{% if kresd_ns.count != 4 and item.address | ipv4 %}
+{% if kresd_ns.count != 4 and item.address | ansible.utils.ipv4 %}
 {% set kresd_ns.count = kresd_ns.count + 1 %}
 {{ '{ \'' + item.address + '\', hostname=\'' + item.hostname + '\' },' }}
 {% endif %}
