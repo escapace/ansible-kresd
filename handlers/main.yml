@@ -1,7 +1,7 @@
 ---
 
 - name: kresd update resolv.conf
-  template:
+  ansible.builtin.template:
     src: templates/resolv.conf.j2
     dest: /etc/resolv.conf
     owner: root
@@ -10,6 +10,6 @@
   when: not kresd_role_debug|bool
 
 - name: kresd daemon-reload
-  systemd:
+  ansible.builtin.systemd:
     daemon_reload: true
   when: not kresd_role_debug|bool

@@ -1,12 +1,12 @@
 ---
 
 - name: install knot resolver
-  package:
+  ansible.builtin.package:
     name: ['knot-resolver', 'lua5.1-filesystem']
     state: present
 
 - name: install http module
-  package:
+  ansible.builtin.package:
     name: ['knot-resolver-module-http']
     state: present
   when: kresd_prometheus_endpoint | bool is true
@@ -14,7 +14,7 @@
     - kresd-conf
 
 - name: install dnstap module
-  package:
+  ansible.builtin.package:
     name: ['knot-resolver-module-dnstap']
     state: present
   when: kresd_dnstap | bool is true
@@ -22,7 +22,7 @@
     - kresd-conf
 
 - name: /etc/knot-resolver directory
-  file:
+  ansible.builtin.file:
     path: /etc/knot-resolver
     owner: root
     group: knot-resolver
@@ -30,7 +30,7 @@
     state: directory
 
 - name: /etc/knot-resolver/kresd.conf.d directory
-  file:
+  ansible.builtin.file:
     path: /etc/knot-resolver/kresd.conf.d
     owner: root
     group: knot-resolver
@@ -40,7 +40,7 @@
     - kresd-conf
 
 - name: fix file permissions
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: touch
     owner: root
@@ -53,7 +53,7 @@
     - "/etc/knot-resolver/root.hints"
 
 - name: "populate package_facts"
-  package_facts:
+  ansible.builtin.package_facts:
     manager: "auto"
 
 # - name: make sure line 'dns=none' is set in /etc/NetworkManager/NetworkManager.conf
@@ -73,7 +73,7 @@
 #     - kresd reload NetworkManager
 
 - name: ensure cache directory exists
-  file:
+  ansible.builtin.file:
     dest: "/var/cache/knot-resolver"
     owner: root
     group: knot-resolver
@@ -82,7 +82,7 @@
   changed_when: false
 
 - name: ensure cache is mounted
-  mount:
+  ansible.posix.mount:
     path: "/var/cache/knot-resolver"
     src: tmpfs
     fstype: tmpfs
@@ -92,11 +92,11 @@
   ignore_errors: true
 
 - name: failed to mount cache
-  fail: msg="failed to mount cache"
+  ansible.builtin.fail: msg="failed to mount cache"
   when: (kresd_cache_mount_result is failed and (not kresd_role_debug|bool))
 
 - name: kresd.conf
-  template:
+  ansible.builtin.template:
     src: templates/kresd.conf.j2
     dest: /etc/knot-resolver/kresd.conf
     owner: root
@@ -106,7 +106,7 @@
     - kresd-conf
 
 - name: kresd.conf.d files
-  template:
+  ansible.builtin.template:
     src: "{{ item }}"
     dest: /etc/knot-resolver/kresd.conf.d/{{ item | basename | regex_replace('.j2$', '') }}
     owner: root
@@ -134,7 +134,7 @@
     - kresd-conf
 
 - name: garbage collector daemon
-  template:
+  ansible.builtin.template:
     src: templates/kres-cache-gc.service.j2
     dest: /usr/lib/systemd/system/kres-cache-gc.service
     owner: root
@@ -144,7 +144,7 @@
     - kresd daemon-reload
 
 - name: kresd daemon
-  template:
+  ansible.builtin.template:
     src: templates/kresd@.j2
     dest: /usr/lib/systemd/system/kresd@.service
     owner: root
@@ -154,22 +154,22 @@
     - kresd daemon-reload
 
 - name: ensure that kresd is enabled
-  service: name=kresd@{{ item }} enabled={{ item|int < kresd_threads|int }}
+  ansible.builtin.service: name=kresd@{{ item }} enabled={{ item|int < kresd_threads|int }}
   with_sequence: start=0 end={{ kresd_max_threads|int - 1 }}
   when: not kresd_role_debug|bool
   notify:
     - kresd update resolv.conf
 
 - name: ensure that kres-cache-gc is enabled
-  service: name=kres-cache-gc enabled=true
+  ansible.builtin.service: name=kres-cache-gc enabled=true
   when: not kresd_role_debug|bool
 
 - name: ensure that systemd-resolved is disabled
-  service: name=systemd-resolved enabled=false
+  ansible.builtin.service: name=systemd-resolved enabled=false
   when: not kresd_role_debug|bool
 
 - name: configure cloud-init
-  template:
+  ansible.builtin.template:
     src: "cloud-init.conf.j2"
     dest: /etc/cloud/cloud.cfg.d/10_dns.conf
     owner: root

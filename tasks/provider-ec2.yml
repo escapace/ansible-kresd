@@ -1,11 +1,11 @@
 ---
 
 - name: include escapace.aws_environment role
-  include_role:
+  ansible.builtin.include_role:
     name: escapace.aws_environment
 
 - name: kresd.conf.d files
-  template:
+  ansible.builtin.template:
     src: "{{ item }}"
     dest: /etc/knot-resolver/kresd.conf.d/{{ item | basename | regex_replace('.j2$', '') }}
     owner: root
