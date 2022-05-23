@@ -167,6 +167,7 @@
 - name: ensure that systemd-resolved is disabled
   ansible.builtin.service: name=systemd-resolved enabled=false
   when: not kresd_role_debug|bool
+  ignore_errors: true
 
 - name: configure cloud-init
   ansible.builtin.template:
