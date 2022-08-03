@@ -18,6 +18,5 @@ galaxy_info:
     - kresd
 
 dependencies:
-  - { role: escapace.fedora_releases }
   - { role: escapace.epel }
   - { role: escapace.ferm }
