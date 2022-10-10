@@ -143,6 +143,14 @@
   notify:
     - kresd daemon-reload
 
+- name: create directory for systemd drop-ins
+  ansible.builtin.file:
+    path: /etc/systemd/system/kresd@.service.d
+    owner: root
+    group: root
+    state: directory
+    mode: 0755
+
 - name: kresd daemon
   ansible.builtin.template:
     src: templates/kresd@.j2
