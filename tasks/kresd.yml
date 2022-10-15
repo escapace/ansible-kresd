@@ -187,7 +187,7 @@
     mode: 0644
   when: "'cloud-init' in ansible_facts.packages"
 
-- include_tasks: provider-ec2.yml
+- ansible.builtin.include_tasks: provider-ec2.yml
   when: provider is defined and provider == "ec2"
   tags:
     - kresd-conf
