@@ -1,6 +1,7 @@
 ---
 
 kresd_role_debug: false
+kresd_ipv4: true
 kresd_ipv6: true
 kresd_dnssec: true
 kresd_cache_size: 16
