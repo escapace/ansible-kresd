@@ -5,7 +5,12 @@
     name: escapace.aws_environment
 
 - name: systemd drop-in
-  ansible.builtin.template: src=templates/service-ec2-environment.conf.j2 dest=/etc/systemd/system/kresd@.service.d/ec2-environment.conf owner=root group=root mode=0644
+  ansible.builtin.template:
+    src: templates/service-ec2-environment.conf.j2
+    dest: /etc/systemd/system/kresd@.service.d/ec2-environment.conf
+    owner: root
+    group: root
+    mode: 0644
   notify:
     - kresd daemon-reload
 

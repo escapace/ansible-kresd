@@ -92,7 +92,8 @@
   ignore_errors: true
 
 - name: failed to mount cache
-  ansible.builtin.fail: msg="failed to mount cache"
+  ansible.builtin.fail:
+    msg: "failed to mount cache"
   when: (kresd_cache_mount_result is failed and (not kresd_role_debug|bool))
 
 - name: kresd.conf
@@ -162,19 +163,24 @@
     - kresd daemon-reload
 
 - name: ensure that kresd is enabled
-  ansible.builtin.service: name=kresd@{{ item }} enabled={{ item | int < kresd_threads | int }}
+  ansible.builtin.service:
+    name: "kresd@{{ item }}"
+    enabled: "{{ item | int < kresd_threads | int }}"
   with_sequence: start=0 end={{ kresd_max_threads | int - 1 }}
   when: not kresd_role_debug|bool
   notify:
     - kresd update resolv.conf
 
 - name: ensure that kres-cache-gc is enabled
-  ansible.builtin.service: name=kres-cache-gc enabled=true
+  ansible.builtin.service:
+    name: kres-cache-gc
+    enabled: true
   when: not kresd_role_debug|bool
 
-# noqa: ignore-errors
 - name: ensure that systemd-resolved is disabled
-  ansible.builtin.service: name=systemd-resolved enabled=false
+  ansible.builtin.service:
+    name: systemd-resolved
+    enabled: false
   when: not kresd_role_debug|bool
   ignore_errors: true
 
