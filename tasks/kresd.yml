@@ -56,21 +56,24 @@
   ansible.builtin.package_facts:
     manager: "auto"
 
-# - name: make sure line 'dns=none' is set in /etc/NetworkManager/NetworkManager.conf
-#   ini_file:
-#     path: /etc/NetworkManager/NetworkManager.conf
-#     state: present
-#     no_extra_spaces: yes
-#     section: main
-#     option: dns
-#     value: none
-#     owner: root
-#     group: root
-#     mode: 0644
-#     backup: yes
-#   when: "'NetworkManager' in ansible_facts.packages"
-#   notify:
-#     - kresd reload NetworkManager
+- name: check that /etc/NetworkManager/NetworkManager.conf exists
+  ansible.builtin.stat:
+    path: /etc/NetworkManager/NetworkManager.conf
+  register: kresd_network_manager_conf
+
+- name: make sure line 'dns=none' is set in /etc/NetworkManager/NetworkManager.conf
+  community.general.ini_file:
+    path: /etc/NetworkManager/NetworkManager.conf
+    state: present
+    no_extra_spaces: true
+    section: main
+    option: dns
+    value: none
+    owner: root
+    group: root
+    mode: 0644
+    backup: true
+  when: kresd_network_manager_conf.stat.exists
 
 - name: ensure cache directory exists
   ansible.builtin.file:
