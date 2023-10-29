@@ -4,6 +4,26 @@
 local lfs = require('lfs')
 local conf_dir = '/etc/knot-resolver/kresd.conf.d'
 
+function coalesce(a, b)
+    if a ~= nil and a ~= '' and a ~= false then
+        return a
+    elseif b ~= nil and b ~= '' and b ~= false then
+        return b
+    else
+      return false
+    end
+end
+
+function filter_strings(t)
+    local res = {}
+    for i, v in ipairs(t) do
+        if type(v) == 'string' then
+            table.insert(res, v)
+        end
+    end
+    return res
+end
+
 if lfs.attributes(conf_dir) ~= nil then
 	local conf_files = {}
 	for entry in lfs.dir(conf_dir) do
