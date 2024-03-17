@@ -1,12 +1,11 @@
 ---
-
 - name: kresd update resolv.conf
   ansible.builtin.template:
     src: templates/resolv.conf.j2
     dest: /etc/resolv.conf
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
     attributes: +i
   when: not kresd_role_debug|bool
 

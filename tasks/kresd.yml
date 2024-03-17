@@ -1,13 +1,12 @@
 ---
-
 - name: install knot resolver
   ansible.builtin.package:
-    name: ['knot-resolver', 'lua5.1-filesystem']
+    name: [knot-resolver, lua5.1-filesystem]
     state: present
 
 - name: install http module
   ansible.builtin.package:
-    name: ['knot-resolver-module-http']
+    name: [knot-resolver-module-http]
     state: present
   when: kresd_prometheus_endpoint | bool is true
   tags:
@@ -15,7 +14,7 @@
 
 - name: install dnstap module
   ansible.builtin.package:
-    name: ['knot-resolver-module-dnstap']
+    name: [knot-resolver-module-dnstap]
     state: present
   when: kresd_dnstap | bool is true
   tags:
@@ -26,7 +25,7 @@
     path: /etc/knot-resolver
     owner: root
     group: knot-resolver
-    mode: '0750'
+    mode: "0750"
     state: directory
 
 - name: /etc/knot-resolver/kresd.conf.d directory
@@ -34,7 +33,7 @@
     path: /etc/knot-resolver/kresd.conf.d
     owner: root
     group: knot-resolver
-    mode: '0750'
+    mode: "0750"
     state: directory
   tags:
     - kresd-conf
@@ -45,16 +44,16 @@
     state: touch
     owner: root
     group: knot-resolver
-    mode: '0640'
+    mode: "0640"
     modification_time: preserve
     access_time: preserve
   loop:
-    - "/etc/knot-resolver/icann-ca.pem"
-    - "/etc/knot-resolver/root.hints"
+    - /etc/knot-resolver/icann-ca.pem
+    - /etc/knot-resolver/root.hints
 
-- name: "populate package_facts"
+- name: populate package_facts
   ansible.builtin.package_facts:
-    manager: "auto"
+    manager: auto
 
 - name: check that /etc/NetworkManager/NetworkManager.conf exists
   ansible.builtin.stat:
@@ -71,32 +70,32 @@
     value: none
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
     backup: true
   when: kresd_network_manager_conf.stat.exists
 
 - name: ensure cache directory exists
   ansible.builtin.file:
-    dest: "/var/cache/knot-resolver"
+    dest: /var/cache/knot-resolver
     owner: root
     group: knot-resolver
-    mode: '0770'
+    mode: "0770"
     state: directory
   changed_when: false
 
 - name: ensure cache is mounted
   ansible.posix.mount:
-    path: "/var/cache/knot-resolver"
+    path: /var/cache/knot-resolver
     src: tmpfs
     fstype: tmpfs
-    opts: "size={{ kresd_cache_size }}m"
+    opts: size={{ kresd_cache_size }}m
     state: mounted
   register: kresd_cache_mount_result
   ignore_errors: true
 
 - name: failed to mount cache
   ansible.builtin.fail:
-    msg: "failed to mount cache"
+    msg: failed to mount cache
   when: (kresd_cache_mount_result is failed and (not kresd_role_debug|bool))
 
 - name: kresd.conf
@@ -105,7 +104,7 @@
     dest: /etc/knot-resolver/kresd.conf
     owner: root
     group: knot-resolver
-    mode: 0640
+    mode: "0640"
   tags:
     - kresd-conf
 
@@ -115,24 +114,24 @@
     dest: /etc/knot-resolver/kresd.conf.d/{{ item | basename | regex_replace('.j2$', '') }}
     owner: root
     group: knot-resolver
-    mode: 0640
+    mode: "0640"
   loop:
     - "000-log-level.conf.j2"
     - "000-cache.conf.j2"
-    - "400-network-local.conf.j2"
-    - "500-unprivileged.conf.j2"
-    - "600-dnssec.conf.j2"
-    - "620-module-bogus-log.conf.j2"
-    - "620-module-stats.conf.j2"
-    - "630-module-policy.conf.j2"
-    - "630-module-view.conf.j2"
-    - "640-module-predict.conf.j2"
-    - "640-module-workarounds.conf.j2"
-    - "640-module-dnstap.conf.j2"
-    - "650-prometheus-endpoint.conf.j2"
-    - "890-policy-forward.conf.j2"
-    - "998-view-local.conf.j2"
-    - "999-view-drop.conf.j2"
+    - 400-network-local.conf.j2
+    - 500-unprivileged.conf.j2
+    - 600-dnssec.conf.j2
+    - 620-module-bogus-log.conf.j2
+    - 620-module-stats.conf.j2
+    - 630-module-policy.conf.j2
+    - 630-module-view.conf.j2
+    - 640-module-predict.conf.j2
+    - 640-module-workarounds.conf.j2
+    - 640-module-dnstap.conf.j2
+    - 650-prometheus-endpoint.conf.j2
+    - 890-policy-forward.conf.j2
+    - 998-view-local.conf.j2
+    - 999-view-drop.conf.j2
   tags:
     - kresd-conf
 
@@ -142,7 +141,7 @@
     dest: /usr/lib/systemd/system/kres-cache-gc.service
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   notify:
     - kresd daemon-reload
 
@@ -152,7 +151,7 @@
     owner: root
     group: root
     state: directory
-    mode: 0755
+    mode: "0755"
 
 - name: kresd daemon
   ansible.builtin.template:
@@ -160,13 +159,13 @@
     dest: /usr/lib/systemd/system/kresd@.service
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   notify:
     - kresd daemon-reload
 
 - name: ensure that kresd is enabled
   ansible.builtin.service:
-    name: "kresd@{{ item }}"
+    name: kresd@{{ item }}
     enabled: "{{ item | int < kresd_threads | int }}"
   with_sequence: start=0 end={{ kresd_max_threads | int - 1 }}
   when: not kresd_role_debug|bool
@@ -188,11 +187,11 @@
 
 - name: configure cloud-init
   ansible.builtin.template:
-    src: "cloud-init.conf.j2"
+    src: cloud-init.conf.j2
     dest: /etc/cloud/cloud.cfg.d/10_dns.conf
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   when: "'cloud-init' in ansible_facts.packages"
 
 - ansible.builtin.include_tasks: provider-ec2.yml
