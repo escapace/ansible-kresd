@@ -1,5 +1,4 @@
 ---
-
 - name: include escapace.aws_environment role
   ansible.builtin.include_role:
     name: escapace.aws_environment
@@ -10,7 +9,7 @@
     dest: /etc/systemd/system/kresd@.service.d/ec2-environment.conf
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   notify:
     - kresd daemon-reload
 
@@ -20,8 +19,8 @@
     dest: /etc/knot-resolver/kresd.conf.d/{{ item | basename | regex_replace('.j2$', '') }}
     owner: root
     group: knot-resolver
-    mode: 0640
+    mode: "0640"
   loop:
-    - "815-policy-ec2.conf.j2"
+    - 815-policy-ec2.conf.j2
   tags:
     - kresd-conf

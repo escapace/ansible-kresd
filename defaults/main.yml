@@ -17,11 +17,11 @@ kresd_prometheus_namespace: kresd_
 kresd_prometheus_endpoint_port: 8453
 
 kresd_tls_forward:
-  - { address: '8.8.8.8', hostname: 'dns.google' }
-  - { address: '8.8.4.4', hostname: 'dns.google' }
-  - { address: '1.1.1.1', hostname: 'cloudflare-dns.com' }
-  - { address: '1.0.0.1', hostname: 'cloudflare-dns.com' }
-  - { address: '2606:4700:4700::1111', hostname: 'cloudflare-dns.com' }
-  - { address: '2606:4700:4700::1001', hostname: 'cloudflare-dns.com' }
-  - { address: '2001:4860:4860::8888', hostname: 'dns.google' }
-  - { address: '2001:4860:4860::8844', hostname: 'dns.google' }
+  - { address: 8.8.8.8, hostname: dns.google }
+  - { address: 8.8.4.4, hostname: dns.google }
+  - { address: 1.1.1.1, hostname: cloudflare-dns.com }
+  - { address: 1.0.0.1, hostname: cloudflare-dns.com }
+  - { address: 2606:4700:4700::1111, hostname: cloudflare-dns.com }
+  - { address: 2606:4700:4700::1001, hostname: cloudflare-dns.com }
+  - { address: 2001:4860:4860::8888, hostname: dns.google }
+  - { address: 2001:4860:4860::8844, hostname: dns.google }
