@@ -1,5 +1,4 @@
 ---
-
 kresd_role_debug: false
 kresd_ipv4: true
 kresd_ipv6: true
