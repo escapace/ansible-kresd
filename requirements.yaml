@@ -1,0 +1,11 @@
+---
+collections: []
+
+roles:
+  - name: escapace.epel
+    src: https://github.com/escapace/ansible-epel
+    version: origin/trunk
+
+  - name: escapace.escapace_releases
+    src: https://github.com/escapace/ansible-escapace_releases
+    version: origin/trunk
