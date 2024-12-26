@@ -74,17 +74,29 @@
 
 - name: config.d files
   ansible.builtin.template:
-    src: '{{ item }}'
-    dest: /etc/knot-resolver/config.d/{{ item | basename | regex_replace('.j2$', '') }}
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
     owner: root
     group: knot-resolver
     mode: '0640'
   loop:
-    - 000-defaults.lua.j2
-    - 650-prometheus-endpoint.lua.j2
-    - 890-policy-forward.lua.j2
-    - 998-view-local.lua.j2
-    - 999-view-drop.lua.j2
+    - { src: 'knot-resolver-defaults.lua.j2', dest: '/etc/knot-resolver/config.d/000-defaults.lua' }
+    - {
+        src: 'knot-resolver-prometheus-endpoint.lua.j2',
+        dest: '/etc/knot-resolver/config.d/650-prometheus-endpoint.lua',
+      }
+    - {
+        src: 'knot-resolver-policy-forward.lua.j2',
+        dest: '/etc/knot-resolver/config.d/890-policy-forward.lua',
+      }
+    - {
+        src: 'knot-resolver-view-local.lua.j2',
+        dest: '/etc/knot-resolver/config.d/998-view-local.lua',
+      }
+    - {
+        src: 'knot-resolver-view-drop.lua.j2',
+        dest: '/etc/knot-resolver/config.d/999-view-drop.lua',
+      }
   tags:
     - kresd-conf
 

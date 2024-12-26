@@ -18,12 +18,10 @@
 
 - name: knot-resolver config.d files
   ansible.builtin.template:
-    src: '{{ item }}'
-    dest: /etc/knot-resolver/config.d/{{ item | basename | regex_replace('.j2$', '') }}
+    src: knot-resolver-policy-ec2.lua.j2
+    dest: /etc/knot-resolver/config.d/815-policy-ec2.lua
     owner: root
     group: knot-resolver
     mode: '0640'
-  loop:
-    - 815-policy-ec2.lua.j2
   tags:
     - kresd-conf
