@@ -1,0 +1,37 @@
+# vim: set ft=yaml :
+rundir: /run/knot-resolver
+workers: {{ kresd_workers }}
+cache:
+  storage: /var/cache/knot-resolver
+  size-max: "{{ kresd_cache_size }}M"
+logging:
+  level: {{ kresd_log_level }}
+  dnssec-bogus: {{ kresd_log_dnssec | bool | ternary('true', 'false') }}
+network:
+  do-ipv4: {{ kresd_ipv4 | bool | ternary('true', 'false') }}
+  do-ipv6: {{ kresd_ipv6 | bool | ternary('true', 'false') }}
+  listen:
+    - interface: 127.0.0.1@53
+    - interface: ::@53
+      freebind: true
+monitoring:
+  enabled: "{{ kresd_prometheus_endpoint | bool | ternary('always', 'lazy') }}"
+management:
+  unix-socket: /run/knot-resolver/manager.sock
+lua:
+  script: |
+    local lfs = require('lfs')
+    local conf_dir = '/etc/knot-resolver/config.d'
+
+    if lfs.attributes(conf_dir) ~= nil then
+      local conf_files = {}
+      for entry in lfs.dir(conf_dir) do
+        if entry:sub(-4) == '.lua' then
+          table.insert(conf_files, entry)
+        end
+      end
+      table.sort(conf_files)
+      for i = 1, #conf_files do
+        dofile(conf_dir .. '/' .. conf_files[i])
+      end
+    end

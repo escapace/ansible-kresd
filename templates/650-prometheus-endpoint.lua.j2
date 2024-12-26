@@ -1,0 +1,7 @@
+{% if kresd_prometheus_endpoint | bool %}
+modules.load('http')
+http.config({ tls = false })
+net.listen('127.0.0.1', {{ kresd_prometheus_endpoint_port }}, { kind = 'webmgmt', freebind = true })
+net.listen('::1', {{ kresd_prometheus_endpoint_port }}, { kind = 'webmgmt', freebind = true })
+http.prometheus.namespace = '{{ kresd_prometheus_namespace }}'
+{% endif %}

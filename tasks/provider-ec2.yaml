@@ -3,10 +3,12 @@
   ansible.builtin.include_role:
     name: escapace.aws_environment
 
-- name: systemd drop-in
-  ansible.builtin.template:
-    src: templates/service-ec2-environment.conf.j2
-    dest: /etc/systemd/system/kresd@.service.d/ec2-environment.conf
+- name: kresd-no-listen.conf drop-in
+  ansible.builtin.copy:
+    content: |
+      [Service]
+      EnvironmentFile=/etc/sysconfig/ec2-environment
+    dest: /etc/systemd/system/knot-resolver.service.d/ec2-environment.conf
     owner: root
     group: root
     mode: '0644'
@@ -16,11 +18,11 @@
 - name: kresd.conf.d files
   ansible.builtin.template:
     src: '{{ item }}'
-    dest: /etc/knot-resolver/kresd.conf.d/{{ item | basename | regex_replace('.j2$', '') }}
+    dest: /etc/knot-resolver/config.d/{{ item | basename | regex_replace('.j2$', '') }}
     owner: root
     group: knot-resolver
     mode: '0640'
   loop:
-    - 815-policy-ec2.conf.j2
+    - 815-policy-ec2.lua.j2
   tags:
     - kresd-conf

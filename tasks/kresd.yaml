@@ -1,24 +1,12 @@
 ---
 - name: install knot resolver
   ansible.builtin.package:
-    name: [knot-resolver, lua5.1-filesystem]
+    name:
+      - knot-resolver
+      - knot-resolver-module-dnstap
+      - knot-resolver-module-http
+      - lua5.1-filesystem
     state: present
-
-- name: install http module
-  ansible.builtin.package:
-    name: [knot-resolver-module-http]
-    state: present
-  when: kresd_prometheus_endpoint | bool is true
-  tags:
-    - kresd-conf
-
-- name: install dnstap module
-  ansible.builtin.package:
-    name: [knot-resolver-module-dnstap]
-    state: present
-  when: kresd_dnstap | bool is true
-  tags:
-    - kresd-conf
 
 - name: /etc/knot-resolver directory
   ansible.builtin.file:
@@ -27,16 +15,6 @@
     group: knot-resolver
     mode: '0750'
     state: directory
-
-- name: /etc/knot-resolver/kresd.conf.d directory
-  ansible.builtin.file:
-    path: /etc/knot-resolver/kresd.conf.d
-    owner: root
-    group: knot-resolver
-    mode: '0750'
-    state: directory
-  tags:
-    - kresd-conf
 
 - name: fix file permissions
   ansible.builtin.file:
@@ -74,89 +52,90 @@
     backup: true
   when: kresd_network_manager_conf.stat.exists
 
-- name: ensure cache directory exists
-  ansible.builtin.file:
-    dest: /var/cache/knot-resolver
-    owner: root
-    group: knot-resolver
-    mode: '0770'
-    state: directory
-  changed_when: false
-
-- name: ensure cache is mounted
-  ansible.posix.mount:
-    path: /var/cache/knot-resolver
-    src: tmpfs
-    fstype: tmpfs
-    opts: size={{ kresd_cache_size }}m
-    state: mounted
-  register: kresd_cache_mount_result
-  ignore_errors: true
-
-- name: failed to mount cache
-  ansible.builtin.fail:
-    msg: failed to mount cache
-  when: (kresd_cache_mount_result is failed and (not kresd_role_debug|bool))
-
-- name: kresd.conf
+- name: config.yaml
   ansible.builtin.template:
-    src: templates/kresd.conf.j2
-    dest: /etc/knot-resolver/kresd.conf
+    src: templates/config.yaml.j2
+    dest: /etc/knot-resolver/config.yaml
     owner: root
     group: knot-resolver
     mode: '0640'
   tags:
     - kresd-conf
 
-- name: kresd.conf.d files
+- name: /etc/knot-resolver/config.d directory
+  ansible.builtin.file:
+    path: /etc/knot-resolver/config.d
+    owner: root
+    group: knot-resolver
+    mode: '0750'
+    state: directory
+  tags:
+    - kresd-conf
+
+- name: config.d files
   ansible.builtin.template:
     src: '{{ item }}'
-    dest: /etc/knot-resolver/kresd.conf.d/{{ item | basename | regex_replace('.j2$', '') }}
+    dest: /etc/knot-resolver/config.d/{{ item | basename | regex_replace('.j2$', '') }}
     owner: root
     group: knot-resolver
     mode: '0640'
   loop:
-    - '000-log-level.conf.j2'
-    - '000-cache.conf.j2'
-    - 400-network-local.conf.j2
-    - 500-unprivileged.conf.j2
-    - 600-dnssec.conf.j2
-    - 620-module-bogus-log.conf.j2
-    - 620-module-stats.conf.j2
-    - 630-module-policy.conf.j2
-    - 630-module-view.conf.j2
-    - 640-module-predict.conf.j2
-    - 640-module-workarounds.conf.j2
-    - 640-module-dnstap.conf.j2
-    - 650-prometheus-endpoint.conf.j2
-    - 890-policy-forward.conf.j2
-    - 998-view-local.conf.j2
-    - 999-view-drop.conf.j2
+    - 000-defaults.lua.j2
+    - 650-prometheus-endpoint.lua.j2
+    - 890-policy-forward.lua.j2
+    - 998-view-local.lua.j2
+    - 999-view-drop.lua.j2
   tags:
     - kresd-conf
 
-- name: garbage collector daemon
-  ansible.builtin.template:
-    src: templates/kres-cache-gc.service.j2
-    dest: /usr/lib/systemd/system/kres-cache-gc.service
-    owner: root
-    group: root
-    mode: '0644'
-  notify:
-    - kresd daemon-reload
-
 - name: create directory for systemd drop-ins
   ansible.builtin.file:
-    path: /etc/systemd/system/kresd@.service.d
+    path: /etc/systemd/system/knot-resolver.service.d
     owner: root
     group: root
     state: directory
     mode: '0755'
 
-- name: kresd daemon
-  ansible.builtin.template:
-    src: templates/kresd@.j2
-    dest: /usr/lib/systemd/system/kresd@.service
+# - name: kresd-no-listen.conf drop-in
+#   ansible.builtin.copy:
+#     content: |
+#       [Service]
+#       Environment=KRESD_NO_LISTEN=true
+#     dest: /etc/systemd/system/knot-resolver.service.d/kresd-no-listen.conf
+#     owner: root
+#     group: root
+#     mode: '0644'
+#   notify:
+#     - kresd daemon-reload
+
+- name: knot-resolver.service
+  ansible.builtin.copy:
+    content: |
+      [Unit]
+      Description=Knot Resolver Manager
+      Documentation=man:knot-resolver.systemd(7)
+      DefaultDependencies=no
+      After=systemd-sysctl.service systemd-sysusers.service systemd-tmpfiles-setup.service local-fs.target systemd-journald.service
+      Before=sysinit.target network.target nss-lookup.target shutdown.target initrd-switch-root.target
+      Conflicts=shutdown.target initrd-switch-root.target
+      Wants=nss-lookup.target
+
+      [Service]
+      Type=notify
+      TimeoutStartSec=600s
+      ExecStart=/usr/bin/knot-resolver --config=/etc/knot-resolver/config.yaml
+      Environment=KRES_LOGGING_TARGET=syslog
+      ExecReload=/usr/bin/kresctl --config=/etc/knot-resolver/config.yaml reload
+      KillSignal=SIGINT
+      WorkingDirectory=/var/lib/knot-resolver
+      User=knot-resolver
+      Group=knot-resolver
+      CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_SETPCAP
+      AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_SETPCAP
+
+      [Install]
+      WantedBy=sysinit.target
+    dest: /etc/systemd/system/knot-resolver.service
     owner: root
     group: root
     mode: '0644'
@@ -165,18 +144,11 @@
 
 - name: ensure that kresd is enabled
   ansible.builtin.service:
-    name: kresd@{{ item }}
-    enabled: '{{ item | int < kresd_threads | int }}'
-  with_sequence: start=0 end={{ kresd_max_threads | int - 1 }}
+    name: knot-resolver
+    enabled: true
   when: not kresd_role_debug|bool
   notify:
     - kresd update resolv.conf
-
-- name: ensure that kres-cache-gc is enabled
-  ansible.builtin.service:
-    name: kres-cache-gc
-    enabled: true
-  when: not kresd_role_debug|bool
 
 - name: ensure that systemd-resolved is disabled
   ansible.builtin.service:
