@@ -3,7 +3,7 @@
   ansible.builtin.include_role:
     name: escapace.aws_environment
 
-- name: kresd-no-listen.conf drop-in
+- name: ec2-environment.conf drop-in
   ansible.builtin.copy:
     content: |
       [Service]
@@ -14,8 +14,9 @@
     mode: '0644'
   notify:
     - kresd daemon-reload
+    - kresd enable
 
-- name: kresd.conf.d files
+- name: knot-resolver config.d files
   ansible.builtin.template:
     src: '{{ item }}'
     dest: /etc/knot-resolver/config.d/{{ item | basename | regex_replace('.j2$', '') }}

@@ -96,18 +96,6 @@
     state: directory
     mode: '0755'
 
-# - name: kresd-no-listen.conf drop-in
-#   ansible.builtin.copy:
-#     content: |
-#       [Service]
-#       Environment=KRESD_NO_LISTEN=true
-#     dest: /etc/systemd/system/knot-resolver.service.d/kresd-no-listen.conf
-#     owner: root
-#     group: root
-#     mode: '0644'
-#   notify:
-#     - kresd daemon-reload
-
 - name: knot-resolver.service
   ansible.builtin.copy:
     content: |
@@ -141,14 +129,8 @@
     mode: '0644'
   notify:
     - kresd daemon-reload
-
-- name: ensure that kresd is enabled
-  ansible.builtin.service:
-    name: knot-resolver
-    enabled: true
-  when: not kresd_role_debug|bool
-  notify:
-    - kresd update resolv.conf
+    - kresd enable
+    - kresd update-resolv-conf
 
 - name: ensure that systemd-resolved is disabled
   ansible.builtin.service:
