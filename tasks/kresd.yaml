@@ -13,16 +13,16 @@
     path: /etc/knot-resolver
     owner: root
     group: knot-resolver
-    mode: '0750'
+    mode: "0750"
     state: directory
 
 - name: fix file permissions
   ansible.builtin.file:
-    path: '{{ item }}'
+    path: "{{ item }}"
     state: touch
     owner: root
     group: knot-resolver
-    mode: '0640'
+    mode: "0640"
     modification_time: preserve
     access_time: preserve
   loop:
@@ -48,7 +48,7 @@
     value: none
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
     backup: true
   when: kresd_network_manager_conf.stat.exists
 
@@ -58,7 +58,7 @@
     dest: /etc/knot-resolver/config.yaml
     owner: root
     group: knot-resolver
-    mode: '0640'
+    mode: "0640"
   tags:
     - kresd-conf
 
@@ -67,35 +67,35 @@
     path: /etc/knot-resolver/config.d
     owner: root
     group: knot-resolver
-    mode: '0750'
+    mode: "0750"
     state: directory
   tags:
     - kresd-conf
 
 - name: config.d files
   ansible.builtin.template:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
     owner: root
     group: knot-resolver
-    mode: '0640'
+    mode: "0640"
   loop:
-    - { src: 'knot-resolver-defaults.lua.j2', dest: '/etc/knot-resolver/config.d/000-defaults.lua' }
+    - { src: "knot-resolver-defaults.lua.j2", dest: "/etc/knot-resolver/config.d/000-defaults.lua" }
     - {
-        src: 'knot-resolver-prometheus-endpoint.lua.j2',
-        dest: '/etc/knot-resolver/config.d/650-prometheus-endpoint.lua',
+        src: "knot-resolver-prometheus-endpoint.lua.j2",
+        dest: "/etc/knot-resolver/config.d/650-prometheus-endpoint.lua",
       }
     - {
-        src: 'knot-resolver-policy-forward.lua.j2',
-        dest: '/etc/knot-resolver/config.d/890-policy-forward.lua',
+        src: "knot-resolver-policy-forward.lua.j2",
+        dest: "/etc/knot-resolver/config.d/890-policy-forward.lua",
       }
     - {
-        src: 'knot-resolver-view-local.lua.j2',
-        dest: '/etc/knot-resolver/config.d/998-view-local.lua',
+        src: "knot-resolver-view-local.lua.j2",
+        dest: "/etc/knot-resolver/config.d/998-view-local.lua",
       }
     - {
-        src: 'knot-resolver-view-drop.lua.j2',
-        dest: '/etc/knot-resolver/config.d/999-view-drop.lua',
+        src: "knot-resolver-view-drop.lua.j2",
+        dest: "/etc/knot-resolver/config.d/999-view-drop.lua",
       }
   tags:
     - kresd-conf
@@ -106,7 +106,7 @@
     owner: root
     group: root
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: knot-resolver.service
   ansible.builtin.copy:
@@ -138,7 +138,7 @@
     dest: /etc/systemd/system/knot-resolver.service
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   notify:
     - kresd daemon-reload
     - kresd enable
@@ -157,7 +157,7 @@
     dest: /etc/cloud/cloud.cfg.d/10_dns.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   when: "'cloud-init' in ansible_facts.packages"
 
 - ansible.builtin.include_tasks: provider-ec2.yaml

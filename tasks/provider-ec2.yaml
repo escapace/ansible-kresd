@@ -11,7 +11,7 @@
     dest: /etc/systemd/system/knot-resolver.service.d/ec2-environment.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
   notify:
     - kresd daemon-reload
     - kresd enable
@@ -22,6 +22,6 @@
     dest: /etc/knot-resolver/config.d/815-policy-ec2.lua
     owner: root
     group: knot-resolver
-    mode: '0640'
+    mode: "0640"
   tags:
     - kresd-conf
