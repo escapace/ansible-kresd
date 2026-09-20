@@ -1,8 +1,7 @@
 ---
-- name: Converge
+- name: converge
   hosts: all
   vars:
-    kresd_role_debug: true
     kresd_listen:
       - interface: 127.0.0.1@53
       - interface: ::1@53

@@ -1,9 +1,5 @@
 ---
-- name: Include the AWS environment role
-  ansible.builtin.include_role:
-    name: escapace.aws_environment
-
-- name: Configure the EC2 environment systemd drop-in
+- name: configure the ec2 environment systemd drop-in
   ansible.builtin.copy:
     content: |
       [Service]
@@ -14,14 +10,15 @@
     mode: "0644"
   notify:
     - kresd daemon-reload
-    - kresd enable
+    - kresd restart knot-resolver
 
-- name: Configure the Knot Resolver EC2 policy
+- name: configure the knot resolver ec2 policy
   ansible.builtin.template:
     src: knot-resolver-policy-ec2.lua.j2
     dest: /etc/knot-resolver/config.d/815-policy-ec2.lua
     owner: root
     group: knot-resolver
     mode: "0640"
+  notify: kresd restart knot-resolver
   tags:
     - kresd-conf

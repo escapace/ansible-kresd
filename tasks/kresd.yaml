@@ -1,5 +1,5 @@
 ---
-- name: Validate Knot Resolver listener collection
+- name: validate knot resolver listener collection
   ansible.builtin.assert:
     that:
       - kresd_listen is sequence
@@ -9,7 +9,7 @@
   tags:
     - always
 
-- name: Validate Knot Resolver listeners
+- name: validate knot resolver listeners
   ansible.builtin.assert:
     that:
       - item is mapping
@@ -23,13 +23,13 @@
   tags:
     - always
 
-- name: Import Knot Resolver COPR GPG key
+- name: import knot resolver copr gpg key
   ansible.builtin.rpm_key:
     key: "{{ kresd_copr_rpm_key }}"
     state: present
   register: kresd_copr_rpm_key_import
 
-- name: Add Knot Resolver COPR repository
+- name: add knot resolver copr repository
   ansible.builtin.get_url:
     url: "{{ kresd_copr_repo_url }}"
     dest: "{{ kresd_copr_repo_dest }}"
@@ -38,7 +38,7 @@
     mode: "0644"
   register: kresd_copr_repo
 
-- name: Install Knot Resolver
+- name: install knot resolver
   ansible.builtin.dnf:
     name:
       - knot-resolver
@@ -48,7 +48,7 @@
     state: present
     update_cache: "{{ kresd_copr_rpm_key_import.changed or kresd_copr_repo.changed }}"
 
-- name: Create the Knot Resolver configuration directory
+- name: create the knot resolver configuration directory
   ansible.builtin.file:
     path: /etc/knot-resolver
     owner: root
@@ -56,7 +56,7 @@
     mode: "0750"
     state: directory
 
-- name: Set Knot Resolver trust-anchor file permissions
+- name: set knot resolver trust-anchor file permissions
   ansible.builtin.file:
     path: "{{ item }}"
     state: touch
@@ -69,16 +69,16 @@
     - /etc/knot-resolver/icann-ca.pem
     - /etc/knot-resolver/root.hints
 
-- name: Populate package facts
+- name: populate package facts
   ansible.builtin.package_facts:
     manager: auto
 
-- name: Check for NetworkManager configuration
+- name: check for networkmanager configuration
   ansible.builtin.stat:
     path: /etc/NetworkManager/NetworkManager.conf
   register: kresd_network_manager_conf
 
-- name: Prevent NetworkManager from managing DNS
+- name: prevent networkmanager from managing dns
   community.general.ini_file:
     path: /etc/NetworkManager/NetworkManager.conf
     state: present
@@ -92,7 +92,7 @@
     backup: true
   when: kresd_network_manager_conf.stat.exists
 
-- name: Configure Knot Resolver
+- name: configure knot resolver
   ansible.builtin.template:
     src: templates/config.yaml.j2
     dest: /etc/knot-resolver/config.yaml
@@ -100,11 +100,11 @@
     group: knot-resolver
     mode: "0640"
     validate: /usr/bin/kresctl validate %s
-  register: kresd_config
+  notify: kresd restart knot-resolver
   tags:
     - kresd-conf
 
-- name: Create the Knot Resolver drop-in directory
+- name: create the knot resolver drop-in directory
   ansible.builtin.file:
     path: /etc/knot-resolver/config.d
     owner: root
@@ -114,7 +114,7 @@
   tags:
     - kresd-conf
 
-- name: Configure Knot Resolver drop-ins
+- name: configure knot resolver drop-ins
   ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
@@ -132,11 +132,11 @@
       dest: /etc/knot-resolver/config.d/998-view-local.lua
     - src: knot-resolver-view-drop.lua.j2
       dest: /etc/knot-resolver/config.d/999-view-drop.lua
-  register: kresd_config_dropins
+  notify: kresd restart knot-resolver
   tags:
     - kresd-conf
 
-- name: Create the Knot Resolver systemd drop-in directory
+- name: create the knot resolver systemd drop-in directory
   ansible.builtin.file:
     path: /etc/systemd/system/knot-resolver.service.d
     owner: root
@@ -144,7 +144,7 @@
     state: directory
     mode: "0755"
 
-- name: Configure the Knot Resolver systemd service
+- name: configure the knot resolver systemd service
   ansible.builtin.copy:
     content: |
       [Unit]
@@ -177,25 +177,28 @@
     mode: "0644"
   notify:
     - kresd daemon-reload
-    - kresd enable
     - kresd update-resolv-conf
+    - kresd restart knot-resolver
 
-- name: Gather service facts
+- name: enable knot resolver
+  ansible.builtin.systemd_service:
+    name: knot-resolver.service
+    enabled: true
+
+- name: gather service facts
   ansible.builtin.service_facts:
-  when: not kresd_role_debug | bool
 
-- name: Disable systemd-resolved
-  ansible.builtin.service:
-    name: systemd-resolved
+- name: disable systemd-resolved
+  ansible.builtin.systemd_service:
+    name: systemd-resolved.service
     enabled: false
   when:
-    - not kresd_role_debug | bool
     - "'systemd-resolved.service' in (ansible_facts.services | default({}))"
     - >-
       (ansible_facts.services['systemd-resolved.service'].status |
       default('not-found')) != 'not-found'
 
-- name: Configure cloud-init
+- name: configure cloud-init
   ansible.builtin.template:
     src: cloud-init.conf.j2
     dest: /etc/cloud/cloud.cfg.d/10_dns.conf
@@ -204,7 +207,7 @@
     mode: "0644"
   when: "'cloud-init' in ansible_facts.packages"
 
-- name: Configure Knot Resolver for EC2
+- name: configure knot resolver for ec2
   ansible.builtin.include_tasks: provider-ec2.yaml
   when: provider is defined and provider == "ec2"
   tags:

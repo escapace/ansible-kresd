@@ -1,5 +1,5 @@
 ---
-- name: Configure Knot Resolver on Red Hat systems
+- name: configure knot resolver on red hat systems
   ansible.builtin.include_tasks: kresd.yaml
   when: ansible_facts.os_family == "RedHat"
   tags:

@@ -1,11 +1,15 @@
 ---
-- name: Reload the systemd manager for Knot Resolver
-  ansible.builtin.systemd:
+- name: kresd gather service facts before knot resolver runtime effects
+  ansible.builtin.service_facts:
+  listen: kresd restart knot-resolver
+
+- name: kresd reload the systemd manager for knot resolver
+  ansible.builtin.systemd_service:
     daemon_reload: true
-  when: not kresd_role_debug | bool
+  when: ansible_facts.get("service_mgr") == "systemd"
   listen: kresd daemon-reload
 
-- name: Update resolv.conf for Knot Resolver
+- name: kresd update resolv.conf for knot resolver
   ansible.builtin.template:
     src: templates/resolv.conf.j2
     dest: /etc/resolv.conf
@@ -13,12 +17,15 @@
     group: root
     mode: "0644"
     attributes: +i
-  when: not kresd_role_debug | bool
+  when: ansible_facts["virtualization_type"] != "docker"
   listen: kresd update-resolv-conf
 
-- name: Enable Knot Resolver
-  ansible.builtin.service:
-    name: knot-resolver
-    enabled: true
-  when: not kresd_role_debug | bool
-  listen: kresd enable
+- name: kresd restart active knot resolver
+  ansible.builtin.systemd_service:
+    name: knot-resolver.service
+    state: restarted
+  when: >-
+    (ansible_facts.services | default({}))
+    .get("knot-resolver.service", {})
+    .get("state") == "running"
+  listen: kresd restart knot-resolver

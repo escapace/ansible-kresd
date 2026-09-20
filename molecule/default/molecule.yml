@@ -4,6 +4,7 @@ ansible:
   cfg:
     defaults:
       home: "${MOLECULE_PROJECT_DIRECTORY}/.ansible"
+      inject_facts_as_vars: false
       roles_path: >-
         ${MOLECULE_PROJECT_DIRECTORY}/..:${MOLECULE_PROJECT_DIRECTORY}/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles
 dependency:
