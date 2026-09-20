@@ -4,12 +4,12 @@ collections:
   - name: community.general
 
 roles:
-  - name: escapace.aws_cli
-    src: https://github.com/escapace/ansible-aws_cli
-    version: origin/trunk
-
   - name: escapace.aws_environment
     src: https://github.com/escapace/ansible-aws_environment
+    version: origin/trunk
+
+  - name: escapace.aws_cli
+    src: https://github.com/escapace/ansible-aws_cli
     version: origin/trunk
 
   - name: escapace.escapace_releases
