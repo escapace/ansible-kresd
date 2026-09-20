@@ -6,16 +6,20 @@ cache:
   size-max: "{{ kresd_cache_size }}M"
 logging:
   level: {{ kresd_log_level }}
-  dnssec-bogus: {{ kresd_log_dnssec | bool | ternary('true', 'false') }}
+dnssec:
+  log-bogus: {{ kresd_log_dnssec | bool | ternary('true', 'false') }}
 network:
   do-ipv4: {{ kresd_ipv4 | bool | ternary('true', 'false') }}
   do-ipv6: {{ kresd_ipv6 | bool | ternary('true', 'false') }}
   listen:
-    - interface: 127.0.0.1@53
-    - interface: ::@53
-      freebind: true
+{% for listener in kresd_listen %}
+    - interface: {{ listener.interface }}
+{% if listener.freebind is defined %}
+      freebind: {{ listener.freebind | bool | ternary('true', 'false') }}
+{% endif %}
+{% endfor %}
 monitoring:
-  enabled: "{{ kresd_prometheus_endpoint | bool | ternary('always', 'lazy') }}"
+  metrics: {{ kresd_prometheus_endpoint | bool | ternary('always', 'lazy') }}
 management:
   unix-socket: /run/knot-resolver/manager.sock
 lua:

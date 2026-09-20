@@ -3,6 +3,8 @@
   hosts: all
   vars:
     kresd_role_debug: true
-    ferm_role_debug: true
+    kresd_listen:
+      - interface: 127.0.0.1@53
+      - interface: ::1@53
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"

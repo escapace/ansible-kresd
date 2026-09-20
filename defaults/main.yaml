@@ -1,11 +1,18 @@
 ---
 kresd_role_debug: false
+kresd_copr_rpm_key: https://download.copr.fedorainfracloud.org/results/@cznic/knot-resolver/pubkey.gpg
+kresd_copr_repo_url: https://copr.fedorainfracloud.org/coprs/g/cznic/knot-resolver/repo/epel-10/group_cznic-knot-resolver-epel-10.repo
+kresd_copr_repo_dest: /etc/yum.repos.d/group_cznic-knot-resolver-epel-10.repo
 kresd_ipv4: true
 kresd_ipv6: true
 kresd_cache_size: 16
 kresd_workers: auto
 kresd_log_level: err # crit, err, warning, notice, info, debug
 kresd_log_dnssec: false
+kresd_listen:
+  - interface: 127.0.0.1@53
+  - interface: ::@53
+    freebind: true
 
 kresd_prometheus_endpoint: false
 kresd_prometheus_namespace: kresd_

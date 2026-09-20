@@ -1,14 +1,54 @@
 ---
-- name: install knot resolver
-  ansible.builtin.package:
+- name: Validate Knot Resolver listener collection
+  ansible.builtin.assert:
+    that:
+      - kresd_listen is sequence
+      - kresd_listen is not string
+      - kresd_listen | length > 0
+    fail_msg: kresd_listen must be a non-empty list of listener mappings
+  tags:
+    - always
+
+- name: Validate Knot Resolver listeners
+  ansible.builtin.assert:
+    that:
+      - item is mapping
+      - (item.interface | default('')) is string
+      - item.interface | default('') | length > 0
+      - (item.freebind | default(false) | type_debug) == 'bool'
+    fail_msg: Each Knot Resolver listener requires an interface and optional boolean freebind
+  loop: "{{ kresd_listen }}"
+  loop_control:
+    label: "{{ item.interface | default(item) }}"
+  tags:
+    - always
+
+- name: Import Knot Resolver COPR GPG key
+  ansible.builtin.rpm_key:
+    key: "{{ kresd_copr_rpm_key }}"
+    state: present
+  register: kresd_copr_rpm_key_import
+
+- name: Add Knot Resolver COPR repository
+  ansible.builtin.get_url:
+    url: "{{ kresd_copr_repo_url }}"
+    dest: "{{ kresd_copr_repo_dest }}"
+    owner: root
+    group: root
+    mode: "0644"
+  register: kresd_copr_repo
+
+- name: Install Knot Resolver
+  ansible.builtin.dnf:
     name:
       - knot-resolver
       - knot-resolver-module-dnstap
       - knot-resolver-module-http
       - lua5.1-filesystem
     state: present
+    update_cache: "{{ kresd_copr_rpm_key_import.changed or kresd_copr_repo.changed }}"
 
-- name: /etc/knot-resolver directory
+- name: Create the Knot Resolver configuration directory
   ansible.builtin.file:
     path: /etc/knot-resolver
     owner: root
@@ -16,7 +56,7 @@
     mode: "0750"
     state: directory
 
-- name: fix file permissions
+- name: Set Knot Resolver trust-anchor file permissions
   ansible.builtin.file:
     path: "{{ item }}"
     state: touch
@@ -29,16 +69,16 @@
     - /etc/knot-resolver/icann-ca.pem
     - /etc/knot-resolver/root.hints
 
-- name: populate package_facts
+- name: Populate package facts
   ansible.builtin.package_facts:
     manager: auto
 
-- name: check that /etc/NetworkManager/NetworkManager.conf exists
+- name: Check for NetworkManager configuration
   ansible.builtin.stat:
     path: /etc/NetworkManager/NetworkManager.conf
   register: kresd_network_manager_conf
 
-- name: make sure line 'dns=none' is set in /etc/NetworkManager/NetworkManager.conf
+- name: Prevent NetworkManager from managing DNS
   community.general.ini_file:
     path: /etc/NetworkManager/NetworkManager.conf
     state: present
@@ -52,17 +92,19 @@
     backup: true
   when: kresd_network_manager_conf.stat.exists
 
-- name: config.yaml
+- name: Configure Knot Resolver
   ansible.builtin.template:
     src: templates/config.yaml.j2
     dest: /etc/knot-resolver/config.yaml
     owner: root
     group: knot-resolver
     mode: "0640"
+    validate: /usr/bin/kresctl validate %s
+  register: kresd_config
   tags:
     - kresd-conf
 
-- name: /etc/knot-resolver/config.d directory
+- name: Create the Knot Resolver drop-in directory
   ansible.builtin.file:
     path: /etc/knot-resolver/config.d
     owner: root
@@ -72,7 +114,7 @@
   tags:
     - kresd-conf
 
-- name: config.d files
+- name: Configure Knot Resolver drop-ins
   ansible.builtin.template:
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
@@ -80,27 +122,21 @@
     group: knot-resolver
     mode: "0640"
   loop:
-    - { src: "knot-resolver-defaults.lua.j2", dest: "/etc/knot-resolver/config.d/000-defaults.lua" }
-    - {
-        src: "knot-resolver-prometheus-endpoint.lua.j2",
-        dest: "/etc/knot-resolver/config.d/650-prometheus-endpoint.lua",
-      }
-    - {
-        src: "knot-resolver-policy-forward.lua.j2",
-        dest: "/etc/knot-resolver/config.d/890-policy-forward.lua",
-      }
-    - {
-        src: "knot-resolver-view-local.lua.j2",
-        dest: "/etc/knot-resolver/config.d/998-view-local.lua",
-      }
-    - {
-        src: "knot-resolver-view-drop.lua.j2",
-        dest: "/etc/knot-resolver/config.d/999-view-drop.lua",
-      }
+    - src: knot-resolver-defaults.lua.j2
+      dest: /etc/knot-resolver/config.d/000-defaults.lua
+    - src: knot-resolver-prometheus-endpoint.lua.j2
+      dest: /etc/knot-resolver/config.d/650-prometheus-endpoint.lua
+    - src: knot-resolver-policy-forward.lua.j2
+      dest: /etc/knot-resolver/config.d/890-policy-forward.lua
+    - src: knot-resolver-view-local.lua.j2
+      dest: /etc/knot-resolver/config.d/998-view-local.lua
+    - src: knot-resolver-view-drop.lua.j2
+      dest: /etc/knot-resolver/config.d/999-view-drop.lua
+  register: kresd_config_dropins
   tags:
     - kresd-conf
 
-- name: create directory for systemd drop-ins
+- name: Create the Knot Resolver systemd drop-in directory
   ansible.builtin.file:
     path: /etc/systemd/system/knot-resolver.service.d
     owner: root
@@ -108,7 +144,7 @@
     state: directory
     mode: "0755"
 
-- name: knot-resolver.service
+- name: Configure the Knot Resolver systemd service
   ansible.builtin.copy:
     content: |
       [Unit]
@@ -144,14 +180,22 @@
     - kresd enable
     - kresd update-resolv-conf
 
-- name: ensure that systemd-resolved is disabled
+- name: Gather service facts
+  ansible.builtin.service_facts:
+  when: not kresd_role_debug | bool
+
+- name: Disable systemd-resolved
   ansible.builtin.service:
     name: systemd-resolved
     enabled: false
-  when: not kresd_role_debug|bool
-  ignore_errors: true
+  when:
+    - not kresd_role_debug | bool
+    - "'systemd-resolved.service' in (ansible_facts.services | default({}))"
+    - >-
+      (ansible_facts.services['systemd-resolved.service'].status |
+      default('not-found')) != 'not-found'
 
-- name: configure cloud-init
+- name: Configure cloud-init
   ansible.builtin.template:
     src: cloud-init.conf.j2
     dest: /etc/cloud/cloud.cfg.d/10_dns.conf
@@ -160,7 +204,8 @@
     mode: "0644"
   when: "'cloud-init' in ansible_facts.packages"
 
-- ansible.builtin.include_tasks: provider-ec2.yaml
+- name: Configure Knot Resolver for EC2
+  ansible.builtin.include_tasks: provider-ec2.yaml
   when: provider is defined and provider == "ec2"
   tags:
     - kresd-conf

@@ -1,10 +1,11 @@
 ---
-- name: kresd daemon-reload
-  when: not kresd_role_debug|bool
+- name: Reload the systemd manager for Knot Resolver
   ansible.builtin.systemd:
     daemon_reload: true
+  when: not kresd_role_debug | bool
+  listen: kresd daemon-reload
 
-- name: kresd update-resolv-conf
+- name: Update resolv.conf for Knot Resolver
   ansible.builtin.template:
     src: templates/resolv.conf.j2
     dest: /etc/resolv.conf
@@ -12,10 +13,12 @@
     group: root
     mode: "0644"
     attributes: +i
-  when: not kresd_role_debug|bool
+  when: not kresd_role_debug | bool
+  listen: kresd update-resolv-conf
 
-- name: kresd enable
-  when: not kresd_role_debug|bool
+- name: Enable Knot Resolver
   ansible.builtin.service:
     name: knot-resolver
     enabled: true
+  when: not kresd_role_debug | bool
+  listen: kresd enable
