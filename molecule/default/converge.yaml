@@ -2,8 +2,14 @@
 - name: converge
   hosts: all
   vars:
+    provider: ec2
     kresd_listen:
       - interface: 127.0.0.1@53
       - interface: ::1@53
+  pre_tasks:
+    - name: install systemd for role testing
+      ansible.builtin.dnf:
+        name: systemd
+        state: present
   roles:
     - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"

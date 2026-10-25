@@ -1,4 +1,59 @@
 ---
+- name: validate knot resolver settings
+  ansible.builtin.assert:
+    that:
+      - (kresd_cache_size | type_debug) == 'int'
+      - kresd_cache_size > 0
+      - kresd_workers == 'auto' or ((kresd_workers | type_debug) == 'int' and kresd_workers > 0)
+      - (kresd_prometheus_endpoint_port | type_debug) == 'int'
+      - kresd_prometheus_endpoint_port >= 1
+      - kresd_prometheus_endpoint_port <= 65535
+      - kresd_prometheus_namespace is string
+      - kresd_prometheus_namespace is match('^([a-zA-Z_:][a-zA-Z0-9_:]*)?$')
+      - kresd_copr_repo_dest is string
+      - kresd_copr_repo_dest is match('^/')
+    fail_msg: Use positive integer cache and worker sizes, a valid metrics prefix and port, and an absolute repository destination
+  tags:
+    - always
+
+- name: validate knot resolver boolean settings
+  ansible.builtin.assert:
+    that:
+      - (item | type_debug) == 'bool'
+    fail_msg: Knot Resolver boolean settings require YAML booleans
+  loop:
+    - "{{ kresd_ipv4 }}"
+    - "{{ kresd_ipv6 }}"
+    - "{{ kresd_log_dnssec }}"
+    - "{{ kresd_prometheus_endpoint }}"
+  tags:
+    - always
+
+- name: validate knot resolver forwarder collection
+  ansible.builtin.assert:
+    that:
+      - kresd_ipv4 or kresd_ipv6
+      - kresd_tls_forward is sequence
+      - kresd_tls_forward is not string
+      - kresd_tls_forward | length > 0
+    fail_msg: Enable at least one address family and supply a non-empty list of TLS forwarders
+  tags:
+    - always
+
+- name: validate knot resolver forwarders
+  ansible.builtin.assert:
+    that:
+      - item is mapping
+      - item.address is string
+      - "'/' not in item.address"
+      - (item.address | ansible.utils.ipaddr) != false
+      - item.hostname is string
+      - item.hostname is match('^[a-zA-Z0-9_.-]+$')
+    fail_msg: Each TLS forwarder requires an IP address and a DNS hostname
+  loop: "{{ kresd_tls_forward }}"
+  tags:
+    - always
+
 - name: validate knot resolver listener collection
   ansible.builtin.assert:
     that:

@@ -1,0 +1,28 @@
+---
+- name: prepare
+  hosts: all
+  tasks:
+    - name: save the container dns configuration
+      ansible.builtin.copy:
+        src: /etc/resolv.conf
+        dest: /tmp/kresd-original-resolv.conf
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: create the environment fixture directory
+      ansible.builtin.file:
+        path: /etc/sysconfig
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: provide the ec2 environment fixture without aws tooling
+      ansible.builtin.copy:
+        src: files/ec2-environment
+        dest: /etc/sysconfig/ec2-environment
+        owner: root
+        group: root
+        mode: "0644"

@@ -1,0 +1,161 @@
+---
+- name: verify
+  hosts: all
+  vars:
+    kresd_listen:
+      - interface: 127.0.0.1@53
+      - interface: ::1@53
+  tasks:
+    - name: inspect the ec2 environment service drop-in
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/knot-resolver.service.d/ec2-environment.conf
+      register: kresd_test_ec2_drop_in
+
+    - name: inspect the ec2 dns policy
+      ansible.builtin.slurp:
+        src: /etc/knot-resolver/config.d/815-policy-ec2.lua
+      register: kresd_test_ec2_policy
+
+    - name: verify file detection enabled the ec2 integration
+      ansible.builtin.assert:
+        that:
+          - "'EnvironmentFile=/etc/sysconfig/ec2-environment' in (kresd_test_ec2_drop_in.content | b64decode)"
+          - "'EC2_INSTANCE_ETH0_IPV4_VPC_DNS' in (kresd_test_ec2_policy.content | b64decode)"
+          - "'EC2_INSTANCE_ETH0_IPV4_VPC_REVERSE_POINTERS' in (kresd_test_ec2_policy.content | b64decode)"
+
+    - name: inspect persistent resolver enablement
+      ansible.builtin.stat:
+        path: /etc/systemd/system/sysinit.target.wants/knot-resolver.service
+      register: kresd_test_enabled_unit
+
+    - name: gather service facts for verification
+      ansible.builtin.service_facts:
+
+    - name: verify image construction did not start the resolver
+      ansible.builtin.assert:
+        that:
+          - kresd_test_enabled_unit.stat.islnk | default(false)
+          - >-
+            (ansible_facts.services | default({}))
+            .get("knot-resolver.service", {})
+            .get("state") != "running"
+
+    - name: exercise runtime handlers with ansible-playbook check mode
+      ansible.builtin.command:
+        argv:
+          - ansible-playbook
+          - --check
+          - --inventory
+          - "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/inventory"
+          - "{{ playbook_dir }}/check.yaml"
+      delegate_to: localhost
+      when: inventory_hostname == ansible_play_hosts_all[0]
+      changed_when: false
+
+    - name: inspect container dns configuration
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /etc/resolv.conf
+        - /tmp/kresd-original-resolv.conf
+      register: kresd_test_resolv_conf
+
+    - name: verify image construction preserved container dns
+      ansible.builtin.assert:
+        that:
+          - kresd_test_resolv_conf.results[0].stat.checksum == kresd_test_resolv_conf.results[1].stat.checksum
+
+    - name: remove the environment fixture
+      ansible.builtin.file:
+        path: /etc/sysconfig/ec2-environment
+        state: absent
+
+    - name: reconcile the ec2 integration without an environment file
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: provider-ec2
+
+    - name: inspect obsolete ec2 configuration
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /etc/systemd/system/knot-resolver.service.d/ec2-environment.conf
+        - /etc/knot-resolver/config.d/815-policy-ec2.lua
+      register: kresd_test_removed_ec2_files
+
+    - name: verify the ec2 integration is absent without its input
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists
+      loop: "{{ kresd_test_removed_ec2_files.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: create an invalid environment file directory
+      ansible.builtin.file:
+        path: /etc/sysconfig/ec2-environment
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: verify other providers skip ec2 environment inspection
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+      vars:
+        provider: other
+
+    - name: verify an unset provider skips ec2 environment inspection
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+
+    - name: verify invalid environment file handling
+      block:
+        - name: attempt ec2 configuration with a directory
+          ansible.builtin.include_role:
+            name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+            tasks_from: provider-ec2
+
+        - name: reject unexpected acceptance of a directory
+          ansible.builtin.fail:
+            msg: The role accepted an environment directory
+      rescue:
+        - name: verify the environment file diagnostic
+          ansible.builtin.assert:
+            that:
+              - ansible_failed_result.msg == '/etc/sysconfig/ec2-environment must be a regular file when present'
+
+    - name: remove the invalid fixture directory
+      ansible.builtin.file:
+        path: /etc/sysconfig/ec2-environment
+        state: absent
+
+    - name: restore the environment fixture
+      ansible.builtin.copy:
+        src: files/ec2-environment
+        dest: /etc/sysconfig/ec2-environment
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: reconcile the ec2 integration when its input returns
+      ansible.builtin.include_role:
+        name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+        tasks_from: provider-ec2
+
+    - name: verify invalid worker count handling
+      block:
+        - name: attempt configuration with zero workers
+          ansible.builtin.include_role:
+            name: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+          vars:
+            kresd_workers: 0
+
+        - name: reject unexpected acceptance of zero workers
+          ansible.builtin.fail:
+            msg: The role accepted zero workers
+      rescue:
+        - name: verify the worker count diagnostic
+          ansible.builtin.assert:
+            that:
+              - ansible_failed_result.msg == 'Use positive integer cache and worker sizes, a valid metrics prefix and port, and an absolute repository destination'

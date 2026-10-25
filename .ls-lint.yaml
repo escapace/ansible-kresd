@@ -4,6 +4,8 @@ ls:
   .yml: kebab-case
 
 ignore:
+  # Ansible requires this filename for automatic role argument validation.
+  - meta/argument_specs.yaml
   - .ansible
   - .git
   - .github

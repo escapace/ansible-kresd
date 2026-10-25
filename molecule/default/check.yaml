@@ -1,0 +1,25 @@
+---
+- name: verify check mode
+  hosts: all
+  vars:
+    provider: ec2
+    kresd_workers: 2
+    kresd_listen:
+      - interface: 127.0.0.1@53
+      - interface: ::1@53
+  pre_tasks:
+    - name: require real ansible check mode
+      ansible.builtin.assert:
+        that:
+          - ansible_check_mode
+  roles:
+    - role: "{{ lookup('env', 'MOLECULE_PROJECT_DIRECTORY') | basename }}"
+  tasks:
+    - name: exercise every live effect handler in check mode
+      ansible.builtin.debug:
+        msg: Queue all resolver runtime effects without applying them
+      changed_when: true
+      notify:
+        - kresd daemon-reload
+        - kresd restart knot-resolver
+        - kresd update-resolv-conf

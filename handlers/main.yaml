@@ -1,15 +1,39 @@
 ---
 - name: kresd gather service facts before knot resolver runtime effects
   ansible.builtin.service_facts:
-  listen: kresd restart knot-resolver
+  listen:
+    - kresd restart knot-resolver
+    - kresd update-resolv-conf
+
+# Image builds can detect installed systemd without a running manager.
+- name: kresd check for the systemd runtime directory
+  ansible.builtin.stat:
+    path: /run/systemd/system
+  register: kresd_systemd_runtime
+  listen: kresd daemon-reload
 
 - name: kresd reload the systemd manager for knot resolver
   ansible.builtin.systemd_service:
     daemon_reload: true
-  when: ansible_facts.get("service_mgr") == "systemd"
+  when:
+    - not ansible_check_mode
+    - ansible_facts.get("service_mgr") == "systemd"
+    - kresd_systemd_runtime.stat.isdir | default(false)
   listen: kresd daemon-reload
 
-- name: kresd update resolv.conf for knot resolver
+- name: kresd restart active knot resolver
+  ansible.builtin.systemd_service:
+    name: knot-resolver.service
+    state: restarted
+  when:
+    - not ansible_check_mode
+    - >-
+      (ansible_facts.services | default({}))
+      .get("knot-resolver.service", {})
+      .get("state") == "running"
+  listen: kresd restart knot-resolver
+
+- name: kresd update resolv.conf for active knot resolver
   ansible.builtin.template:
     src: templates/resolv.conf.j2
     dest: /etc/resolv.conf
@@ -17,15 +41,11 @@
     group: root
     mode: "0644"
     attributes: +i
-  when: ansible_facts["virtualization_type"] != "docker"
+  when:
+    - not ansible_check_mode
+    - ansible_facts["virtualization_type"] != "docker"
+    - >-
+      (ansible_facts.services | default({}))
+      .get("knot-resolver.service", {})
+      .get("state") == "running"
   listen: kresd update-resolv-conf
-
-- name: kresd restart active knot resolver
-  ansible.builtin.systemd_service:
-    name: knot-resolver.service
-    state: restarted
-  when: >-
-    (ansible_facts.services | default({}))
-    .get("knot-resolver.service", {})
-    .get("state") == "running"
-  listen: kresd restart knot-resolver

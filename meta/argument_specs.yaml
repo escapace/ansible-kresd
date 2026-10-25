@@ -1,0 +1,102 @@
+---
+argument_specs:
+  main:
+    short_description: install and configure knot resolver on rhel-family version 10
+    options:
+      provider:
+        type: str
+        description: Optional provider name; only ec2 enables EC2 environment file inspection and configuration.
+      kresd_copr_rpm_key:
+        type: str
+        default: https://download.copr.fedorainfracloud.org/results/@cznic/knot-resolver/pubkey.gpg
+        description: URL of the signing key for the Knot Resolver COPR repository.
+      kresd_copr_repo_url:
+        type: str
+        default: https://copr.fedorainfracloud.org/coprs/g/cznic/knot-resolver/repo/epel-10/group_cznic-knot-resolver-epel-10.repo
+        description: URL of the Knot Resolver repository definition.
+      kresd_copr_repo_dest:
+        type: path
+        default: /etc/yum.repos.d/group_cznic-knot-resolver-epel-10.repo
+        description: Absolute managed-host path for the repository definition.
+      kresd_ipv4:
+        type: bool
+        default: true
+        description: Enable IPv4 queries and IPv4 TLS forwarders.
+      kresd_ipv6:
+        type: bool
+        default: true
+        description: Enable IPv6 queries and IPv6 TLS forwarders.
+      kresd_cache_size:
+        type: int
+        default: 16
+        description: Positive integer cache size in MiB.
+      kresd_workers:
+        type: raw
+        default: auto
+        description: Worker count, either auto or a positive integer.
+      kresd_log_level:
+        type: str
+        default: err
+        choices:
+          - crit
+          - err
+          - warning
+          - notice
+          - info
+          - debug
+        description: Knot Resolver logging level.
+      kresd_log_dnssec:
+        type: bool
+        default: false
+        description: Log DNSSEC validation failures.
+      kresd_listen:
+        type: list
+        elements: dict
+        default:
+          - interface: 127.0.0.1@53
+          - interface: ::@53
+            freebind: true
+        description: Non-empty list of listener mappings in Knot Resolver interface syntax.
+        options:
+          interface:
+            type: str
+            required: true
+            description: Listener address with an optional port separated by @.
+          freebind:
+            type: bool
+            default: false
+            description: Allow binding an address not currently assigned to the host.
+      kresd_prometheus_endpoint:
+        type: bool
+        default: false
+        description: Enable the unencrypted loopback Prometheus HTTP endpoint.
+      kresd_prometheus_namespace:
+        type: str
+        default: kresd_
+        description: Metric-name prefix, which may be empty.
+      kresd_prometheus_endpoint_port:
+        type: int
+        default: 8453
+        description: Loopback HTTP port, from 1 through 65535.
+      kresd_tls_forward:
+        type: list
+        elements: dict
+        default:
+          - { address: 1.1.1.1, hostname: cloudflare-dns.com }
+          - { address: 1.0.0.1, hostname: cloudflare-dns.com }
+          - { address: 8.8.8.8, hostname: dns.google }
+          - { address: 8.8.4.4, hostname: dns.google }
+          - { address: "2606:4700:4700::1111", hostname: cloudflare-dns.com }
+          - { address: "2606:4700:4700::1001", hostname: cloudflare-dns.com }
+          - { address: "2001:4860:4860::8888", hostname: dns.google }
+          - { address: "2001:4860:4860::8844", hostname: dns.google }
+        description: Non-empty list of DNS-over-TLS forwarders; address families follow kresd_ipv4 and kresd_ipv6.
+        options:
+          address:
+            type: str
+            required: true
+            description: IPv4 or IPv6 address without a prefix length.
+          hostname:
+            type: str
+            required: true
+            description: DNS hostname used to authenticate the forwarder's TLS certificate.

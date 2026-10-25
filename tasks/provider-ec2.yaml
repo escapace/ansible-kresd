@@ -1,4 +1,31 @@
 ---
+- name: check for the ec2 environment file
+  ansible.builtin.stat:
+    path: /etc/sysconfig/ec2-environment
+  register: kresd_ec2_environment
+
+- name: validate the ec2 environment file
+  ansible.builtin.assert:
+    that:
+      - not kresd_ec2_environment.stat.exists or (kresd_ec2_environment.stat.isreg | default(false))
+    fail_msg: /etc/sysconfig/ec2-environment must be a regular file when present
+
+- name: remove the ec2 environment systemd drop-in without an environment file
+  ansible.builtin.file:
+    path: /etc/systemd/system/knot-resolver.service.d/ec2-environment.conf
+    state: absent
+  when: not kresd_ec2_environment.stat.exists
+  notify:
+    - kresd daemon-reload
+    - kresd restart knot-resolver
+
+- name: remove the knot resolver ec2 policy without an environment file
+  ansible.builtin.file:
+    path: /etc/knot-resolver/config.d/815-policy-ec2.lua
+    state: absent
+  when: not kresd_ec2_environment.stat.exists
+  notify: kresd restart knot-resolver
+
 - name: configure the ec2 environment systemd drop-in
   ansible.builtin.copy:
     content: |
@@ -8,6 +35,7 @@
     owner: root
     group: root
     mode: "0644"
+  when: kresd_ec2_environment.stat.exists
   notify:
     - kresd daemon-reload
     - kresd restart knot-resolver
@@ -19,6 +47,7 @@
     owner: root
     group: knot-resolver
     mode: "0640"
+  when: kresd_ec2_environment.stat.exists
   notify: kresd restart knot-resolver
   tags:
     - kresd-conf
