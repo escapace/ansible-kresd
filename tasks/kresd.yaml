@@ -219,6 +219,12 @@
       ExecReload=/usr/bin/kresctl --config=/etc/knot-resolver/config.yaml reload
       KillSignal=SIGINT
       WorkingDirectory=/var/lib/knot-resolver
+      RuntimeDirectory=knot-resolver
+      RuntimeDirectoryMode=0750
+      StateDirectory=knot-resolver
+      StateDirectoryMode=0750
+      CacheDirectory=knot-resolver
+      CacheDirectoryMode=0750
       User=knot-resolver
       Group=knot-resolver
       CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_SETPCAP

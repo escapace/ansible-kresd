@@ -6,6 +6,23 @@
       - interface: 127.0.0.1@53
       - interface: ::1@53
   tasks:
+    - name: inspect the resolver systemd unit
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/knot-resolver.service
+      register: kresd_test_unit
+
+    - name: verify systemd owns the resolver directories
+      ansible.builtin.assert:
+        that:
+          - "'RuntimeDirectory=knot-resolver' in (kresd_test_unit.content | b64decode).splitlines()"
+          - "'RuntimeDirectoryMode=0750' in (kresd_test_unit.content | b64decode).splitlines()"
+          - "'StateDirectory=knot-resolver' in (kresd_test_unit.content | b64decode).splitlines()"
+          - "'StateDirectoryMode=0750' in (kresd_test_unit.content | b64decode).splitlines()"
+          - "'CacheDirectory=knot-resolver' in (kresd_test_unit.content | b64decode).splitlines()"
+          - "'CacheDirectoryMode=0750' in (kresd_test_unit.content | b64decode).splitlines()"
+          - "'User=knot-resolver' in (kresd_test_unit.content | b64decode).splitlines()"
+          - "'Group=knot-resolver' in (kresd_test_unit.content | b64decode).splitlines()"
+
     - name: inspect the ec2 environment service drop-in
       ansible.builtin.slurp:
         src: /etc/systemd/system/knot-resolver.service.d/ec2-environment.conf
